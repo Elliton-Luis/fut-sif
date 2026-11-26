@@ -101,7 +101,7 @@
         wash(630, 310, .058, strength * .085);
         break;
       case 'header': voice(310, 138, .115, .092, 'triangle'); break;
-      case 'slap': wash(2500, 540, .115, .29); voice(210, 85, .10, .10); break;
+      case 'slap': wash(2000, 620, .09, .105); voice(190, 100, .07, .045); break;
       case 'foul': whistle(0, .14); whistle(.17, .19); break;
       case 'wall': wash(980, 265, .14, strength * .13); break;
       case 'ground':

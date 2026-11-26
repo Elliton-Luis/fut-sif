@@ -133,3 +133,9 @@ html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavio
   .stage:is(:fullscreen,.is-expanded) .selection-menu .keyboard-guide > span:last-child{display:none}
   .stage:is(:fullscreen,.is-expanded) .selection-menu .modes button,.stage:is(:fullscreen,.is-expanded) .selection-menu .play{padding-block:5px}
 }
+.yellow-card{display:inline-block;width:.47em;height:.69em;margin-inline-start:.28em;border-radius:1px;background:#ffdf55;vertical-align:baseline}
+.play-call{width:max-content;max-width:calc(100% - 16px);text-align:center;white-space:normal}
+.menu[data-card=yellow] #menu-title,.menu[data-card=yellow] #menu-kicker{color:#ffdf55}
+.menu[data-card=yellow]{border-color:#ad8b37}
+.menu[data-card=red] #menu-title,.menu[data-card=red] #menu-kicker{color:#ff9488}
+@media(max-height:460px){.stage:is(:fullscreen,.is-expanded) .selection-menu[data-card=red] #menu-description{display:block;font-size:12px}}

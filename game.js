@@ -24,10 +24,11 @@
   const rosterSlots = [...picker.children];
   const audio = window.arenaSound;
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const W = canvas.width, H = canvas.height, floor = 355, crossbar = 252;
+  const W = canvas.width, H = canvas.height, floor = 355, crossbar = 231;
   const goalLeft = 77, goalRight = W - goalLeft, radius = 14, playerScale = .9;
   const maxBallSpeed = 56, recharge = 600, aimLimit = 108;
   const comboHits = 4, comboSpeed = 87;
+  const keeperZone = 135, keeperTime = 15 * 60;
   const basicBallSpeed = .85, alignedHitBoost = 1.05;
   const ballTimeScale = .5;
   const aimGreenMin = -.29, aimGreenMax = -.04;
@@ -48,12 +49,13 @@
   const controls = new Set([...keys.flat(), ...slapKeys.keys(), 'KeyP']);
   const held = new Set(), pressed = new Set(), pointers = new Map();
   const sc = [$('blue-score'), $('orange-score')];
+  const yellowCards = [$('blue-yellow'), $('orange-yellow')];
   const specials = [$('blue-special'), $('orange-special')];
   const combos = ['blue', 'orange'].map(team => ({ root: $(`${team}-combo`), bar: $(`${team}-combo-bar`), label: $(`${team}-combo-value`) }));
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
-  const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0 }));
+  const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0, warned: false }));
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, sound = true, freeze = 0, shake = 0;
@@ -62,11 +64,11 @@
   let callTime = 0, crowdEnergy = 0, sceneTime = 0, netCooldown = 0;
   let celebrating = null, urgent = false;
 
-  function playCall(text, color = '#d9fc66') {
+  function playCall(text, color = '#d9fc66', duration = 57) {
     callout.textContent = text;
     callout.style.color = color;
     callout.hidden = false;
-    callTime = 57;
+    callTime = duration;
   }
 
   function clearCall() { callTime = 0; callout.hidden = true; }
@@ -86,6 +88,7 @@
       x: i ? 722 : 278, y: floor, vx: 0, vy: 0, kick: 0, kickType: 0,
       cooldown: 0, struck: false, crouch: false, gait: 0,
       slapTime: 0, slapDir: 0, knockback: 0,
+      keeperTicks: 0, keeperCalled: false,
     }));
     Object.assign(ball, { x: W / 2, y: 174, vx: serve ? (Math.random() - .5) * 3 : 0, vy: 0, angle: 0, spin: 0, boost: 0, comboFlight: false, clearOf: null, clearance: 0 });
     aim = null;
@@ -113,7 +116,7 @@
     });
   }
 
-  function menu(title, description, button, kicker, modes) {
+  function menu(title, description, button, kicker, modes, card = '') {
     $('menu-title').textContent = title;
     $('menu-description').textContent = description;
     $('menu-kicker').textContent = kicker;
@@ -123,6 +126,7 @@
     keyboardGuide.hidden = !modes;
     pitch.classList.toggle('is-selecting', modes);
     menuPanel.classList.toggle('selection-menu', modes);
+    menuPanel.dataset.card = card;
     play.firstChild.textContent = `${button} `;
     overlay.hidden = false;
   }
@@ -136,7 +140,8 @@
     audio?.unlock();
     audio?.setInPlay(true);
     resetPositions(true);
-    players.forEach(p => { p.recharge = 0; p.combo = 0; p.slapCount = 0; });
+    players.forEach(p => { p.recharge = 0; p.combo = 0; p.slapCount = 0; p.warned = false; });
+    yellowCards.forEach(card => { card.hidden = true; });
     clearInput();
     sparks = [];
     shake = 0;
@@ -158,7 +163,7 @@
     updateHUD();
   }
 
-  function togglePause() {
+  function togglePause(foul = null) {
     if (phase === 'menu' || phase === 'end') return;
     clearInput();
     if (phase === 'paused') {
@@ -173,12 +178,15 @@
       phase = 'paused';
       audio?.setInPlay(false);
       $('pause-label').textContent = 'VOLTAR';
-      period.textContent = 'PAUSADO';
-      menu('PAUSA', 'Aperte P ou Enter para continuar.', 'CONTINUAR', '●  PARTIDA PAUSADA', false);
+      period.textContent = foul ? 'FALTA' : 'PAUSADO';
+      if (foul) {
+        menu('FALTA!', `${names[lineup[foul.i]]} recebeu amarelo. Aperte P ou Enter para continuar.`,
+          'CONTINUAR', 'CARTÃO AMARELO', false, 'yellow');
+      } else menu('PAUSA', 'Aperte P ou Enter para continuar.', 'CONTINUAR', '●  PARTIDA PAUSADA', false);
     }
   }
 
-  function finish() {
+  function finish(expelled = null) {
     aim = null;
     clearCall();
     clearCelebration();
@@ -188,8 +196,13 @@
     pause.disabled = true;
     period.textContent = 'FIM DE JOGO';
     announcement.textContent = '';
-    menu(score[0] === score[1] ? 'EMPATE!' : `${names[lineup[score[0] > score[1] ? 0 : 1]]} VENCEU!`,
-      `Placar final: ${score[0]} × ${score[1]}. Escolha o craque para a revanche.`, 'JOGAR DE NOVO', '●  APITO FINAL', true);
+    if (expelled) {
+      menu('CARTÃO VERMELHO', `${names[lineup[expelled.i]]} foi expulso. ${names[lineup[1 - expelled.i]]} venceu.`,
+        'JOGAR DE NOVO', 'SEGUNDO AMARELO', true, 'red');
+    } else {
+      menu(score[0] === score[1] ? 'EMPATE!' : `${names[lineup[score[0] > score[1] ? 0 : 1]]} VENCEU!`,
+        `Placar final: ${score[0]} × ${score[1]}. Escolha o craque para a revanche.`, 'JOGAR DE NOVO', '●  APITO FINAL', true);
+    }
     audio?.play('finish');
     audio?.setInPlay(false);
   }
@@ -278,28 +291,45 @@
   }
 
   function slap(p) {
-    if (++p.slapCount > 3) {
-      p.slapCount = 0;
-      const losesGoal = score[p.i] > 0;
-      if (losesGoal) score[p.i]--;
-      updateHUD();
-      playCall(losesGoal ? 'FALTA! −1 GOL' : 'FALTA!', '#ff9a89');
-      audio?.play('foul');
-      return;
-    }
-
     const rival = players[1 - p.i];
     const dx = rival.x - p.x;
     p.slapDir = Math.sign(dx) || (p.i ? -1 : 1);
-    p.slapTime = 10;
-    if (Math.abs(dx) > 76 || Math.abs(headY(p) - headY(rival)) > 43) return;
+    p.slapTime = 7;
+    if (Math.abs(dx) <= 76 && Math.abs(headY(p) - headY(rival)) <= 43) {
+      rival.knockback = 12 * p.slapDir;
+      if (aim?.owner === rival) aim = null;
+      burst((p.x + rival.x) / 2, (headY(p) + headY(rival)) / 2, '#fff09e', 6, 3);
+      audio?.play('slap');
+    }
 
-    rival.knockback = 18 * p.slapDir;
-    if (aim?.owner === rival) aim = null;
-    shake = 7;
-    burst((p.x + rival.x) / 2, (headY(p) + headY(rival)) / 2, '#fff09e', 22, 7);
-    playCall('TAPA!', p.color);
-    audio?.play('slap');
+    if (++p.slapCount < 3) return;
+    p.slapCount = 0;
+    if (p.warned) {
+      finish(p);
+      return;
+    }
+    p.warned = true;
+    yellowCards[p.i].hidden = false;
+    clearCall();
+    audio?.play('foul');
+    togglePause(p);
+  }
+
+  function trackKeepers(dt) {
+    for (const p of players) {
+      const ownGoal = p.i ? goalRight : goalLeft;
+      const distance = Math.abs(p.x - ownGoal);
+      if (distance > keeperZone) {
+        p.keeperTicks = 0;
+        if (distance > keeperZone + 20) p.keeperCalled = false;
+      } else if (!p.keeperCalled) {
+        p.keeperTicks += dt;
+        if (p.keeperTicks >= keeperTime && !callTime) {
+          p.keeperCalled = true;
+          playCall(`${names[lineup[p.i]]} acha que ele é goleiro`, p.color, 130);
+        }
+      }
+    }
   }
 
   function headY(p) { return p.y - (p.crouch ? 43 : 65) * playerScale; }
@@ -578,6 +608,7 @@
       stepBall(ballStep);
       if (phase === 'playing') stepBall(ballStep);
     }
+    if (phase === 'playing') trackKeepers(dt);
     const before = Math.ceil(clock);
     clock = Math.max(0, clock - dt / 60);
     const leftOnClock = Math.ceil(clock);
@@ -701,7 +732,7 @@
     line(ctx, [[10 + stretch, shoeY + 4], [24 + stretch, shoeY + 4]], outline, 3);
     if (p.slapTime) {
       const side = p.slapDir * dir;
-      const hand = side * (23 + 29 * Math.sin(p.slapTime / 10 * Math.PI));
+      const hand = side * (21 + 19 * Math.sin(p.slapTime / 7 * Math.PI));
       line(ctx, [[side * 11, shirtY], [hand, -52]], outline, 10);
       line(ctx, [[side * 13, shirtY - 1], [hand, -52]], skin, 6);
       oval(ctx, hand, -53, 7, 5, skin);
@@ -950,7 +981,7 @@
   }
 
   play.addEventListener('click', () => phase === 'paused' ? togglePause() : start());
-  pause.addEventListener('click', togglePause);
+  pause.addEventListener('click', () => togglePause());
   fullscreen.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', syncFullscreen);
   if (window.ResizeObserver) new ResizeObserver(syncRosterWindow).observe(picker);
