@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Rafael (Betael) — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".2" y1=".18" x2=".88" y2=".9">
+      <stop stop-color="#fae1ce"/><stop offset=".55" stop-color="#efc5ad"/><stop offset="1" stop-color="#c5917f"/>
+    </linearGradient>
+    <linearGradient id="hair" x1=".14" y1=".04" x2=".89" y2=".95">
+      <stop stop-color="#414652"/><stop offset=".55" stop-color="#242b36"/><stop offset="1" stop-color="#161c25"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#25232a" stroke-width="3.5" stroke-linejoin="round">
+    <path fill="#d3a18c" d="M29 61c-6-5-13-2-13 7-1 11 6 19 13 18l6-6z"/>
+    <path fill="url(#skin)" d="M33 32c11-12 30-15 49-10 17 5 28 19 29 34 1 9-2 18-5 26-4 13-10 21-18 29-7 7-15 11-24 12-9 0-16-4-22-11-9-9-15-19-17-31-3-18-2-37 8-49z"/>
+    <path fill="url(#hair)" d="M25 80c-5-10-8-22-8-33-2-14 3-23 11-29C39 9 49 6 62 6c11-4 27-1 38 6 11 7 16 16 16 29 1 11-3 23-8 32l-1-17-15-6 3 6-24-10 4 6-24-7 5 4-20 7c-5 8-8 16-11 24z"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path stroke="#616674" stroke-width="2.1" d="M25 42c4-11 14-20 24-25m-16 25c7-8 14-12 22-15m8-13c15 4 28 10 40 19m-26-15c11 2 20 7 25 12"/>
+    <path stroke="#3e454f" stroke-width="1.7" d="M23 49l13-12m16-7 43 17m-35-23 47 21m-11-4 15 8"/>
+    <path stroke="#a76f64" stroke-width="1.9" d="M20 67c3-2 6 1 6 5l-1 4"/>
+  </g>
+  <path fill="#ffe4d2" opacity=".58" d="M43 56l20-7 15 4-2 8c-12-4-21-5-33-5zM34 76c8 3 17 5 23 4-1 6-8 9-16 7z"/>
+  <path fill="#bd8577" opacity=".47" d="M89 78c5 1 10 0 15-2-4 7-7 12-13 15l-4-4zM48 111c11 7 24 7 37 1-7 7-15 10-22 9-6-1-11-5-15-10z"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#483935" d="M34 63c6-6 15-8 24-5l6 4-1 2c-12-4-22-3-29 1zm45 1c6-4 13-4 20 0l4 4-2 2c-7-4-15-5-22-3z"/>
+    <path fill="#fff0e4" stroke="#6b4a45" stroke-width="1.65" d="M36 70c6-6 16-7 24-1-6 5-16 6-24 1zm44 2c6-5 15-4 21 2-6 4-15 4-21-2z"/>
+    <path fill="#3b3032" d="M43 68c3-3 9-3 11 0 2 4-1 7-5 7-4 0-7-3-6-7zm42 3c3-2 8-1 10 2 1 4-3 6-6 5-4-1-5-4-4-7z"/>
+    <path fill="#fffbf4" d="M50 67h2v1.8h-2zm41 4h2v1.7h-2z"/>
+    <path fill="#f4cbb6" d="M70 64c2 2 4 6 5 10l5 8c1 3-1 6-5 6-4 0-7-2-8-4l3-9z"/>
+    <path fill="none" stroke="#a96f63" stroke-width="1.6" d="M73 66q3 4 4 9l3 7c1 3-1 5-5 6m-8-4q2-2 5 0"/>
+    <path fill="#ffdec9" d="M71 73l3 5 1 5-3 1-2-3z"/>
+    <path fill="#b16e66" d="M47 92c7 1 14 5 23 5 8 0 14-1 19-4-6 9-12 13-21 13-9 0-16-5-21-14z"/>
+    <path fill="#dc9286" d="M54 97c11 4 19 4 30-1-5 5-11 8-17 7-5 0-9-2-13-6z"/>
+    <path fill="none" stroke="#824e48" stroke-width="1.7" d="M46 92c6 4 15 7 24 7 8 0 14-3 19-6"/>
+    <path fill="none" stroke="#ae7b6d" stroke-width="1.65" d="M44 88c-3 3-4 6-3 9m50-8 3 6m-33 14c5 2 9 2 13 0"/>
+  </g>
+</svg>

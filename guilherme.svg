@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Guilherme — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".92" y1=".13" x2=".13" y2=".95"><stop stop-color="#dbad87"/><stop offset=".53" stop-color="#b8876d"/><stop offset="1" stop-color="#80584c"/></linearGradient>
+    <linearGradient id="hair" x1=".28" y1="0" x2=".73" y2="1"><stop stop-color="#424047"/><stop offset="1" stop-color="#1d1e27"/></linearGradient>
+    <linearGradient id="beard" x1=".2" y1=".1" x2=".84" y2=".89"><stop stop-color="#453739"/><stop offset="1" stop-color="#29242c"/></linearGradient>
+  </defs>
+  <g stroke="#26242a" stroke-width="3.2" stroke-linejoin="round">
+    <path fill="url(#skin)" d="M32 30c14-13 30-16 49-12 16 4 27 15 27 31 0 8-3 14-2 20 1 5 8 9 11 14 2 4-1 7-5 8l-7 1-1 10c0 11-8 19-19 21-15 3-30-3-41-13-15-12-24-27-26-44-2-16 3-29 14-36z"/>
+    <path fill="url(#hair)" d="M25 91c-8-7-13-15-15-24-7-5-8-12-4-18-4-6-2-13 3-17-1-6 3-11 9-13 1-6 7-10 13-9 4-6 10-8 17-5 5-5 13-5 19-1 6-4 14-2 18 2 8-1 14 3 16 9 8 0 14 5 15 12 4 6 1 13-5 17l-9 2c-9 4-18 6-28 7-11 2-19 5-25 13l-6 9-8-5-5 6z"/>
+    <path fill="#b6836d" d="M39 72c-8-8-17-6-18 3-1 8 3 18 11 21 5 2 9-1 11-5l2-7"/>
+    <path fill="url(#beard)" d="M42 76c4 8 7 15 13 19 7 5 15 6 22 4 3-5 10-10 17-12l8-2 4 5-2 6c-2 2-6 3-9 4l10 1c0 13-8 21-20 23-15 2-28-3-37-12-8-9-12-19-13-29z"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path stroke="#56535b" stroke-width="1.85" d="M13 38c0-5 5-8 9-6m-3-9c3-5 9-7 13-4m4-7c4-3 10-3 13 0m9-2c4-4 10-3 13 1m7 0c6-2 11 2 11 6m8 1c5 0 8 4 8 8m-72 6c-2 5 4 8 8 5m9-15c5-4 12-3 14 2m8-2c6-4 12-1 14 2m7 5c5 1 7 5 5 9"/>
+    <path stroke="#9a695e" stroke-width="1.75" d="M25 77c2-4 8-4 11 1l-3 5 4 4"/>
+    <path stroke="#685055" opacity=".7" stroke-width="1.6" d="M45 93l6 8m-1-10 5 7m2 5 6 4m-2 2 7 3m6 2 7 1m6-3 7-4"/>
+  </g>
+  <path fill="#d9a887" opacity=".55" d="M63 65c8-7 18-10 29-10l5 4c-12 0-23 4-31 10zm-5 15c6-3 12-4 20-2-4 7-11 10-17 7z"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#3d2b2b" d="M74 65c7-6 19-9 28-5l1 5c-10-2-18 0-28 3z"/>
+    <path fill="#eed9c6" stroke="#744e45" stroke-width="1.65" d="M77 73c6-6 15-8 22-4-4 6-14 8-22 4z"/>
+    <path fill="#34292b" d="M88 69c3-2 8-2 9 1 1 4-4 6-8 5-1-1-2-3-1-6z"/>
+    <path fill="#f9e1cc" d="M93 69h1.55v1.5H93z"/>
+    <path fill="none" stroke="#8d5a4f" stroke-width="1.65" d="M103 71c2 4 7 7 11 12 2 4-1 6-5 7l-6-1"/>
+    <path fill="#a66b63" d="M89 100c5-2 11-3 15-1-2 5-6 8-10 6z"/>
+    <path fill="none" stroke="#684347" stroke-width="1.45" d="M89 100c5-1 10-1 15-1"/>
+  </g>
+</svg>

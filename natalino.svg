@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Natalino — caricatura arcade</title>
+  <defs>
+    <linearGradient id="skin" x1="1" y1=".28" x2="0" y2=".84">
+      <stop stop-color="#dda67c"/><stop offset=".56" stop-color="#c18a63"/><stop offset="1" stop-color="#925b45"/>
+    </linearGradient>
+    <linearGradient id="hair" x1=".82" y1="0" x2=".15" y2="1">
+      <stop stop-color="#3b363c"/><stop offset=".53" stop-color="#29282e"/><stop offset="1" stop-color="#1c2029"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#27212a" stroke-width="3.5" stroke-linejoin="round">
+    <path fill="#aa7457" d="M32 67c-7-8-16-4-14 5 1 9 6 18 15 19l5-9z"/>
+    <path fill="url(#skin)" d="M31 40c7-15 27-23 46-23 21 1 31 15 34 36 2 14-1 26-5 39-3 9-7 15-15 22-8 7-15 10-25 8-14-1-22-9-30-20-8-10-12-23-12-37 0-9 1-18 7-25z"/>
+    <path fill="url(#hair)" d="M27 78c-4-10-10-17-10-29 0-11 4-20 12-28 7-8 18-13 28-15 8-2 14 0 22 2l8-4-2 5 11-3-5 6 14-1-5 5 10 3-5 3c7 8 9 22 7 33-1 7-2 12-4 17-1-16-5-25-9-32-5-8-11-9-19-10-10 0-18 2-27 5-10 4-16 8-19 17-3 8-2 14-7 26z"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path stroke="#524950" stroke-width="2" d="M31 28c9-10 20-14 31-15m-15 12c15-9 31-11 44-7m-10 5c12-3 20 0 25 7"/>
+    <path stroke="#81513c" stroke-width="2.3" d="M21 72c3-2 6 2 7 7"/>
+  </g>
+  <path fill="#e9b88e" opacity=".46" d="M64 40c12-5 26-6 33 0l5 11c-12-4-27-3-38-3z"/>
+  <path fill="#9c624d" opacity=".4" d="M35 76c8 5 15 7 25 7-3 7-9 10-16 9-4-3-7-9-9-16zm11 29c9 7 22 12 36 9l8-4c-6 9-16 12-26 10-9-1-15-7-18-15z"/>
+  <g fill="#392e30">
+    <path d="M38 58c6-7 17-8 27-5l5 4-2 4c-9-3-20-5-30 0z"/>
+    <path d="M81 54c7-5 16-6 22-1l1 5c-8-3-14-2-21 1z"/>
+  </g>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#e9d6bf" stroke="#654538" stroke-width="1.7" d="M41 67c7-7 19-6 27 0-9 6-20 6-27 0zm41-2c6-7 16-7 22-1-6 6-16 7-22 1z"/>
+    <g fill="#3b2b2b"><ellipse cx="57.4" cy="66.5" rx="4.3" ry="4.8"/><ellipse cx="95.1" cy="64.2" rx="4" ry="4.6"/></g>
+    <g fill="#f9e5ca"><circle cx="59" cy="65" r="1.2"/><circle cx="96.4" cy="62.7" r="1.1"/></g>
+    <path fill="none" stroke="#a46e54" stroke-width="1.4" d="M44 73c8 3 15 3 21 0m20-2c4 2 9 2 13 0"/>
+    <path fill="#d4a076" d="M76 59c2 8 5 14 9 20 2 4 1 7-4 8-5 1-10 0-12-3 1-5 4-9 5-16z"/>
+    <path fill="none" stroke="#95614b" stroke-width="1.9" d="M77 64c2 6 5 12 8 17 2 4-1 6-5 6m-10-2c2-2 4-1 6 0"/>
+    <path fill="#9f5f55" d="M62 95c5-1 9-4 13-4l5 2 5-2 5 2c-3 4-7 9-12 10-5 1-11-3-16-8z"/>
+    <path fill="#bf7a67" d="M69 97c6 1 11-1 16-2-2 3-5 6-8 6-3 0-6-2-8-4z"/>
+    <path fill="none" stroke="#76453e" stroke-width="1.6" d="M62 95c6-1 10 0 15 0 5 0 8-3 13-2"/>
+    <path fill="none" stroke="#a06a50" stroke-width="1.4" d="M68 107c4 1 9 1 13-1"/>
+  </g>
+</svg>

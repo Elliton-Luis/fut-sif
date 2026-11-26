@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101516">
+  <title>Cabeça de Bola — Futebol Arcade</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="audio.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span> QUINTAL<span>ARCADE</span></div>
+      <button id="sound" class="utility" aria-pressed="true" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z M16 9a4 4 0 0 1 0 6 M18 6a8 8 0 0 1 0 12"/></svg><span>SOM LIGADO</span></button>
+    </header>
+
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow"><span></span> FUTEBOL ARCADE <span></span></p>
+      <h1 id="title">CABEÇA DE <em>BOLA</em></h1>
+      <p class="tagline">Dois cabeçudos. Uma bola. Nenhuma noção de física.</p>
+    </section>
+
+    <div class="stage" id="stage">
+    <section class="game" aria-label="Arena de futebol">
+      <div class="scoreboard">
+        <div class="team blue"><i></i><span class="team-meta"><span id="blue-name">NATALINO</span> <small id="blue-special" class="special-status" data-state="ready">BICUDO OK</small></span><b id="blue-score">0</b></div>
+        <div class="clock"><strong id="time">1:00</strong><small id="period">TEMPO DE JOGO</small></div>
+        <div class="team orange"><b id="orange-score">0</b><span class="team-meta"><span id="orange-name">PAULO</span> <small id="orange-special" class="special-status" data-state="ready">BICUDO OK</small></span><i></i></div>
+      </div>
+      <div class="pitch is-selecting" id="pitch">
+        <canvas id="field" width="1000" height="410" tabindex="-1" aria-label="Natalino de azul à esquerda e Paulo de laranja à direita"></canvas>
+        <div id="announcement" class="announcement" aria-live="polite"></div>
+        <div id="play-call" class="play-call" aria-hidden="true" hidden></div>
+        <div class="overlay" id="overlay">
+          <div class="menu selection-menu" id="menu">
+            <p id="menu-kicker">● &nbsp; MODO ARCADE</p>
+            <h2 id="menu-title">ESCOLHA SEU CRAQUE</h2>
+            <p id="menu-description">Seleção só pelo teclado. Mova seu cursor e confirme o craque para ouvir a fala.</p>
+            <div class="roster-window" aria-label="Janela da seleção">
+              <span class="blue" id="cursor-p1">P1</span>
+              <span id="roster-range" aria-live="polite">COLUNAS 1–5 / 15</span>
+              <span class="orange" id="cursor-p2">P2</span>
+            </div>
+            <div class="character-picker" id="character-picker" role="group" aria-label="Personagens da arena" tabindex="-1">
+              <div class="character blue" id="pick-natalino">
+                <span class="character-role" id="role-natalino">J1 · AZUL</span>
+                <img id="portrait" src="natalino.svg" alt="">
+                <strong>NATALINO</strong>
+                <q id="quote-natalino">Opa Bêbe</q>
+              </div>
+              <div class="character orange" id="pick-paulo">
+                <span class="character-role" id="role-paulo">J2 · LARANJA</span>
+                <img id="portrait-paulo" src="paulo.svg" alt="">
+                <strong>PAULO</strong>
+                <q id="quote-paulo">Tá com medo é viadinho</q>
+              </div>
+              <div class="character reserve" id="pick-betael">
+                <span class="character-role" id="role-betael">RESERVA</span>
+                <img id="portrait-betael" src="betael.svg" alt="">
+                <strong>BETAEL</strong>
+                <q id="quote-betael">Eu amo o PT</q>
+              </div>
+              <div class="character reserve" id="pick-txuco" data-build="slim">
+                <span class="character-role" id="role-txuco">RESERVA</span>
+                <img id="portrait-txuco" src="txuco.svg" alt="">
+                <strong>TXUCO</strong>
+                <q id="quote-txuco">Ó o amansa Boi</q>
+              </div>
+              <div class="character reserve" id="pick-elliton">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-elliton" src="elliton.svg" alt="">
+                <strong>ELLITON</strong>
+                <q>Aqui diz ajajajajajaajaj</q>
+              </div>
+              <div class="character reserve" id="pick-ivo" data-score-name="IVO">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-ivo" src="ivo.svg" alt="">
+                <strong>PRESIDENTE IVO</strong>
+                <q>Estouraram minha cirurgia</q>
+              </div>
+              <div class="character reserve" id="pick-negricius">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-negricius" src="negricius.svg" alt="">
+                <strong>NEGRICIUS</strong>
+                <q>Minha mulher não deixou</q>
+              </div>
+              <div class="character reserve" id="pick-tony">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-tony" src="tony.svg" alt="">
+                <strong>TONY</strong>
+                <q>Mas eu tava trabalhando</q>
+              </div>
+              <div class="character reserve" id="pick-kayna">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-kayna" src="kayna.svg" alt="">
+                <strong>KAYNÃ</strong>
+                <q>Vou ali lavar um carro</q>
+              </div>
+              <div class="character reserve" id="pick-nego-ju">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-nego-ju" src="nego-ju.svg" alt="">
+                <strong>NEGO JU</strong>
+                <q>Eu vou lhe mamar, Ivo</q>
+              </div>
+              <div class="character reserve" id="pick-neri">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-neri" src="neri.svg" alt="">
+                <strong>NERI</strong>
+                <q>Sai daqui Natalino</q>
+              </div>
+              <div class="character reserve" id="pick-guilherme">
+                <span class="character-role">RESERVA</span>
+                <img id="portrait-guilherme" src="guilherme.svg" alt="">
+                <strong>GUILHERME</strong>
+                <q>Vou trair meus amigos no Dominó</q>
+              </div>
+            </div>
+            <p id="roster-preview" class="roster-preview" aria-live="polite">Confirme um craque para ver a fala.</p>
+            <div class="keyboard-guide" id="keyboard-guide" aria-label="Atalhos de teclado">
+              <span class="blue"><b>P1</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>M</kbd> confirma</span>
+              <span class="orange"><b>P2</b> <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> <kbd>1</kbd> confirma</span>
+              <span><kbd>Enter</kbd> joga · <kbd>C</kbd> muda modo · <kbd>Q</kbd> som</span>
+            </div>
+            <div class="modes" id="modes" aria-label="Modo de jogo">
+              <button id="local" class="selected" aria-pressed="true" type="button">2 JOGADORES</button>
+              <button id="solo" aria-pressed="false" type="button">VS. CPU</button>
+            </div>
+            <button class="play" id="play" type="button">JOGAR AGORA <span aria-hidden="true">▶</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="gamebar"><span><i></i> ARENA DO QUINTAL</span><div class="game-actions">
+        <button id="pause" class="utility" type="button" disabled><span aria-hidden="true">Ⅱ</span> <span id="pause-label">PAUSAR</span> <kbd>P</kbd></button>
+        <button id="fullscreen" class="utility" type="button" aria-pressed="false" title="Tela cheia (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg><span id="fullscreen-label">TELA CHEIA</span> <kbd>F</kbd></button>
+      </div></div>
+    </section>
+    <div class="touch" id="touch" hidden aria-label="Controles de toque"></div>
+    </div>
+
+    <section class="controls" aria-label="Controles dos jogadores">
+      <div class="control-card blue"><div class="player-label"><i></i><div><b id="blue-label">NATALINO</b><small>TIME AZUL</small></div></div><div class="bindings"><span><kbd>A</kbd><kbd>D</kbd><small>MOVER</small></span><span><kbd>W</kbd><kbd>S</kbd><small>PULO / ABAIXA</small></span><span><kbd>M</kbd><kbd>N</kbd><small>RASTEIRO / ALTO</small></span><span><kbd>B</kbd><small>RECUO NO AR</small></span><span class="special-key"><kbd>V</kbd><small>BICUDO</small></span></div></div>
+      <div class="control-card orange" id="orange-controls"><div class="player-label"><i></i><div><b id="orange-label">PAULO</b><small>TIME LARANJA</small></div></div><div class="bindings"><span><kbd>←</kbd><kbd>→</kbd><small>MOVER</small></span><span><kbd>↑</kbd><kbd>↓</kbd><small>PULO / ABAIXA</small></span><span><kbd>1</kbd><kbd>2</kbd><small>RASTEIRO / ALTO</small></span><span><kbd>3</kbd><small>RECUO NO AR</small></span><span class="special-key"><kbd>4</kbd><small>BICUDO</small></span></div><small class="cpu-label">CONTROLADO PELO COMPUTADOR</small></div>
+    </section>
+    <p class="tip"><strong>✦ BICUDO:</strong> perto da bola, aperte uma vez para mirar e outra para chutar. Mire no verde para acertar em cheio. Se esperar demais, o chute sai sozinho.</p>
+    <p class="tip"><strong>✦ BICO DE CORRIDA:</strong> ganhe embalo na direção do chute e acerte a bola com a ponta da chuteira para mandar uma bomba.</p>
+    <footer><span>QUINTAL ARCADE <i>✦</i></span><span>MAIS CABEÇA, MENOS JUÍZO.</span></footer>
+  </main>
+</body>
+</html>

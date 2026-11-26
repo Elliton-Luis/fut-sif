@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Kaynã — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".76" y1=".12" x2=".17" y2=".9"><stop stop-color="#efc8aa"/><stop offset=".52" stop-color="#d4a388"/><stop offset="1" stop-color="#a57261"/></linearGradient>
+    <linearGradient id="hair" x1=".7" y1="0" x2=".2" y2="1"><stop stop-color="#45404a"/><stop offset="1" stop-color="#20212a"/></linearGradient>
+  </defs>
+  <g stroke="#29252c" stroke-width="3.1" stroke-linejoin="round">
+    <path fill="#c39079" d="M29 57c-8-8-14-2-14 7 0 10 5 16 11 17l6-7z"/>
+    <path fill="url(#skin)" d="M31 36c10-17 30-22 49-18 19 4 33 17 34 37 1 14-3 26-7 38-5 14-16 24-30 28-11 3-23 0-33-7-13-9-20-24-21-41-1-14 1-25 8-37z"/>
+    <path fill="url(#hair)" d="M26 73c-5-6-8-18-7-28-3-4-3-11 1-15-2-7 5-12 11-13 0-6 6-10 13-9 4-6 11-7 17-5 5-3 12-2 17 2 8-2 16 2 17 7 8-2 15 4 15 10 6 2 9 8 7 13 4 10 2 20-4 27l-3-9-7-4c-7 1-13-4-13-9-6 2-12-2-14-7-7 3-12-1-14-6-7 4-13 1-15-2-10 6-16 17-18 30z"/>
+  </g>
+  <path fill="none" stroke="#69626a" stroke-width="1.8" stroke-linecap="round" d="M30 23c3-6 8-8 13-7m5-4c5-4 12-4 17 0m6-2c7-3 14 1 14 7m5 0c7-2 13 3 13 8m2 3c7 0 10 6 7 11m-28-17c-6-4-13-1-13 5m22-1c-2 5 3 10 8 8m6 3c-2 4 0 8 5 10"/>
+  <path fill="#443239" d="M25 70c3 13 9 22 17 26 5 3 10 3 14 3l4 5c8 6 20 6 28 2l8-8c6-2 11-9 15-19-2 20-10 32-21 38-11 6-25 8-38 2-16-8-25-23-27-49z"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#48373a" d="M35 52c8-5 17-6 27-2l2 4c-9-3-19-2-29 0zm44 0c10-2 19 1 26 7l-1 3c-8-4-16-7-25-7z"/>
+    <path fill="#f2dbc8" stroke="#855d51" stroke-width="1.5" d="M37 62c7-5 17-4 23 1-7 4-16 4-23-1zm43 3c8-3 16-1 23 5-7 3-17 1-23-5z"/>
+    <path fill="#3c2c2a" d="M45 60c4-2 9-1 10 3-1 4-7 4-10 0zm43 5c4-1 8 0 9 4-1 4-7 3-9-1z"/>
+    <path fill="#dcb091" d="M66 62c1 6 4 11 7 15 3 4 1 7-3 9-4 2-9 0-12-3-2-2-2-5 0-7z"/>
+    <path fill="#543a3b" d="M47 92c4-7 11-10 19-9l5 3 5-1c7 1 13 5 16 10-6-2-11-4-17-4l-5-1c-9-2-16-1-23 2z"/>
+    <path fill="#79474a" d="M47 93c12-2 30 1 45 3-6 10-16 13-25 11-9-2-16-7-20-14z"/>
+    <path fill="#fff0d8" d="M49 94c13-1 29 1 40 3-4 4-12 5-18 4-9-1-17-3-22-7z"/>
+    <path fill="none" stroke="#b19987" stroke-width=".85" d="M57 94l-1 3m8-2-1 4m8-4-1 5m8-4-1 4m7-3-1 3"/>
+    <path fill="#bf7572" d="M60 103c8 2 17 3 23 1-4 4-12 5-18 3z"/>
+  </g>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#d4e9ef" fill-opacity=".14" stroke="#6c6267" stroke-width="1.8" d="M27 55c10-4 29-3 37 4 2 2 0 14-3 19-4 5-22 4-31-1-5-3-5-14-3-22zm47 6c8-3 29 1 34 8 2 3-2 14-5 17-6 6-23 1-29-4-4-3-4-17 0-21z"/>
+    <path fill="none" stroke="#342e34" stroke-width="2.2" d="M20 52l8 3c11-4 28-3 36 4m10 2c9-3 28 1 35 8l6 2m-51-9c3-2 6-2 10 1"/>
+    <path fill="none" stroke="#f4dbc6" stroke-width="1.15" opacity=".67" d="M34 76c8 3 17 4 24 1m21 4c7 4 14 6 20 4"/>
+  </g>
+</svg>

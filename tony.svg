@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Tony — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".89" y1=".16" x2=".1" y2=".91">
+      <stop stop-color="#d9b184"/><stop offset=".55" stop-color="#bc956f"/><stop offset="1" stop-color="#8c6656"/>
+    </linearGradient>
+    <linearGradient id="hair" x1=".32" y1="0" x2=".72" y2="1">
+      <stop stop-color="#42444b"/><stop offset="1" stop-color="#161b24"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#27242a" stroke-width="3.2" stroke-linejoin="round">
+    <path fill="url(#skin)" d="M32 36c13-13 33-17 50-13 18 4 29 14 31 31 1 8-2 16 1 23l4 7c1 4-3 7-7 7l-3 5c-3 14-11 24-24 26-12 2-23-3-34-10-10-6-19-15-24-27-6-16-5-37 6-49z"/>
+    <path fill="url(#hair)" d="M26 91c-7-3-10-8-11-15-5-1-8-7-6-13-6-4-7-13-2-18-3-7 1-13 6-16-1-6 4-11 10-11 2-7 9-10 15-8 4-6 11-8 17-5 6-4 13-4 18 0 6-4 13-2 17 3 7-2 14 1 17 7 8 0 13 5 13 11 6 3 7 11 3 17 2 5-1 10-6 13l-4-11c-4 3-10 1-11-5-4 3-9 0-10-6-6 3-11 1-13-4-3 7-9 10-14 7-6-3-7-7-5-12-7 3-12 13-16 20-4 7-8 13-15 17z"/>
+    <path fill="#c89d7a" d="M37 68c-6-7-15-4-16 3-1 8 4 15 10 18 4 2 9-1 10-6"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path stroke="#585963" stroke-width="1.85" d="M10 42c0-5 5-7 8-4 2 3-1 6-4 5m9-16c2-4 7-5 10-2m-2-10c4-4 9-3 11 1m6-3c2-5 8-6 11-2m7 1c3-5 9-4 11 0m8 2c5-4 10-1 11 4m6 2c5-1 9 2 8 6m2 4c6-2 10 3 7 7"/>
+    <path stroke="#43454e" stroke-width="1.7" d="M18 58c-3-4 0-8 5-7m9-13c4 0 7-4 4-7m14-7c-4 5 1 10 6 8m16-14c-3 4 3 9 7 6m12-1c-2 5 3 9 7 7m5 4c3 3 7 2 9-1"/>
+    <path stroke="#9c7363" stroke-width="1.65" d="M26 71c3-5 8-3 10 1l-3 5 3 3"/>
+  </g>
+  <path fill="#e2b991" opacity=".63" d="M59 50c7-10 22-12 33-11l7 8c-12-2-22 0-32 6zm-9 29c5-4 13-4 20 0-3 5-12 9-18 6z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#685048" d="M55 58c7-5 18-6 27-3l2 4c-9-2-19-3-29 1zm37-5c6-4 12-4 17-1v4c-6-2-11-2-17 0z"/>
+    <path fill="#e9d1bc" stroke="#795547" stroke-width="1.55" d="M57 66c6-4 15-5 23-1-6 5-16 5-23 1zm36-2c5-4 11-4 16-1-4 4-11 5-16 1z"/>
+    <path fill="#41322d" d="M67 63c3-1 7 0 8 2 0 4-6 5-8 2zm33-2c3-1 6 0 7 2 0 3-5 5-7 2z"/>
+    <path fill="#d7aa81" d="M86 62c2 6 6 11 11 15 4 2 5 6 1 9-4 2-10 1-13-2-3-2-4-5-3-8z"/>
+    <path fill="none" stroke="#9b6e5c" stroke-width="1.55" d="M94 76c4 2 6 5 4 8m-13-1c2-2 5-2 8 0"/>
+    <path fill="#915f58" d="M71 98c7-4 14-6 19-5l4 1 8-2c-4 7-10 12-17 12-6 0-10-2-14-6z"/>
+    <path fill="#bb8275" d="M76 99c8-1 16-2 22-5-2 5-7 8-13 8-4 0-6-1-9-3z"/>
+    <path fill="none" stroke="#674542" stroke-width="1.6" d="M71 98c7-1 13 1 19-1l12-5"/>
+  </g>
+  <path fill="#926c5c" opacity=".44" d="M59 105c9 6 23 11 37 5-5 8-14 11-22 8-6-2-10-7-15-13z"/>
+</svg>
