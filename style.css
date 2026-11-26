@@ -32,3 +32,104 @@
 .character-picker{--roster-gap:8px;--card-width:calc((100% - 4 * var(--roster-gap))/5);position:relative;grid-auto-flow:column;grid-template-columns:repeat(15,var(--card-width));grid-template-rows:repeat(2,minmax(0,1fr));gap:var(--roster-gap);overflow:hidden}.character-empty{position:relative}.character-empty.cursor-p1{box-shadow:inset 0 -3px var(--blue)}.character-empty.cursor-p2{box-shadow:inset 0 3px var(--orange)}.character-empty.cursor-p1.cursor-p2{box-shadow:inset 0 -3px var(--blue),inset 0 3px var(--orange)}
 @media(max-width:580px){.character-picker{--roster-gap:4px}.roster-window{font-size:9px}}
 .menu:not(.selection-menu) .roster-window{display:none}.character-picker .character{pointer-events:none}.character-picker .character:not(.reserve){border-color:var(--team)}
+.combo-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,7vw,90px);padding:6px clamp(10px,5vw,58px) 9px;background:#151d1e;border-bottom:1px solid #52605a}.combo-readout{display:grid;gap:4px;color:var(--team);font:800 11px var(--mono);letter-spacing:.045em}.combo-readout>div{display:flex;justify-content:space-between;gap:4px}.combo-readout strong{color:#f8f8ed}.combo-readout progress{display:block;width:100%;height:8px;appearance:none;accent-color:var(--team);background:#070d0e;border:1px solid #4d5a56;border-radius:10px;overflow:hidden}.combo-readout progress::-webkit-progress-bar{background:#080f10}.combo-readout progress::-webkit-progress-value{background:var(--team)}.combo-readout progress::-moz-progress-bar{background:var(--team)}.combo-readout.combo-ready{--team:#ffde64}.combo-readout.combo-ready strong{color:var(--team)}.combo-readout.combo-ready progress{box-shadow:0 0 8px #ffde6477}.scoreboard .team-meta{font-size:14px}.special-status{font-size:10px}.control-card .bindings small,.player-label small{color:#bac8c2}.gamebar{color:#c7d3cb}.character q,.keyboard-guide{color:#d9e4dc}.stage:is(:fullscreen,.is-expanded) .game,.stage:is(:fullscreen,.is-expanded) .touch{width:min(100%,calc((100dvh - var(--arena-gutter) - 34px)*2.439))}
+@media(max-width:660px){.scoreboard .team-meta{font-size:11px}.special-status{font-size:8px}.combo-readout{font-size:9px;letter-spacing:.01em}.combo-board{padding:5px 9px 7px}.combo-readout progress{height:7px}.scoreboard{gap:clamp(8px,2.7vw,18px)}}
+
+/* Game-first layout: size the arena against the viewport and keep the keys under it. */
+body{background:#101516}
+.shell{width:min(calc(100% - 24px),max(980px,calc((100dvh - 239px) * 1000 / 410)));margin:10px auto 12px}
+.gamebar{justify-content:center;height:41px}
+.game-actions{justify-content:center;flex-wrap:wrap;gap:6px;margin:0}
+.game-actions .utility{font-size:11px}
+.scoreboard{height:72px;gap:clamp(16px,4vw,60px)}
+.scoreboard .team-meta{font-size:clamp(13px,1.35vw,20px)}
+.team b{min-width:48px;height:46px;font-size:30px}
+.clock strong{font-size:35px}
+.clock small,.special-status{font-size:10px}
+.combo-readout{font-size:12px}
+.controls{margin-top:8px}
+.touch{display:none}
+.control-card{padding:9px 12px;column-gap:12px;row-gap:7px}
+.player-label{font-size:clamp(12px,1.2vw,16px);letter-spacing:.045em;white-space:normal}
+.bindings{gap:8px 10px}
+.bindings kbd{min-width:25px;padding:3px 5px;font-size:15px}
+.controls small{font-size:10px;letter-spacing:.025em}
+.stage:is(:fullscreen,.is-expanded){--chrome-height:227px;--stage-width:min(100%,max(320px,calc((100dvh - var(--chrome-height)) * 1000 / 410)));justify-content:safe center}
+.stage:is(:fullscreen,.is-expanded) :is(.game,.touch,.controls){width:var(--stage-width);flex:none}
+.stage:is(:fullscreen,.is-expanded) .game-actions{margin:0}
+@media(any-pointer:coarse){.stage:is(:fullscreen,.is-expanded){--chrome-height:282px}}
+@media(max-width:720px){
+  .shell{width:calc(100% - 12px);margin:6px auto}
+  .scoreboard{height:57px;gap:clamp(7px,2.7vw,18px)}
+  .scoreboard .team-meta{font-size:clamp(11px,2.9vw,15px)}
+  .team b{min-width:32px;height:34px;font-size:23px}
+  .clock strong{font-size:25px}
+  .clock small,.special-status{font-size:8px}
+  .combo-readout{font-size:10px}
+  .controls{grid-template-columns:1fr}
+  .control-card{padding:8px 9px}
+  .bindings kbd{min-width:22px;font-size:13px}
+  .controls small{font-size:9px}
+  .stage:is(:fullscreen,.is-expanded){--chrome-height:292px}
+}
+@media(max-width:420px){.gamebar{min-height:37px;height:auto;padding-block:4px}.game-actions .utility{font-size:9px}.game-actions{gap:4px}.bindings{gap:7px 8px}}
+
+/* Fullscreen stays inside a single viewport, including in short landscape windows. */
+html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavior:none}
+.stage:is(:fullscreen,.is-expanded){width:100%;height:100%;min-height:0;padding:0;gap:0;overflow:hidden;overscroll-behavior:none;justify-content:flex-start;background:#0c1213}
+.stage:is(:fullscreen,.is-expanded) .game{position:relative;display:grid;grid-template-rows:auto auto minmax(0,1fr);width:100%;min-height:0;flex:1 1 auto;border:0;border-radius:0;box-shadow:none}
+.stage:is(:fullscreen,.is-expanded) .controls,.stage:is(:fullscreen,.is-expanded):has(.overlay:not([hidden])) .touch{display:none}
+.stage:is(:fullscreen,.is-expanded) .pitch{min-height:0;background:#0c1213}
+.stage:is(:fullscreen,.is-expanded) .pitch canvas{position:absolute;inset:0;width:100%;height:100%;min-height:0;object-fit:contain}
+.stage:is(:fullscreen,.is-expanded) .pitch .overlay{position:absolute;inset:0;min-height:0;padding:4px}
+.stage:is(:fullscreen,.is-expanded) .gamebar{position:absolute;right:8px;bottom:8px;z-index:2;height:auto;min-height:0;padding:0}
+.stage:is(:fullscreen,.is-expanded) .game-actions .utility:not(#fullscreen),.stage:is(:fullscreen,.is-expanded) #fullscreen :is(span,kbd){display:none}
+.stage:is(:fullscreen,.is-expanded) #fullscreen{padding:6px;opacity:.85}
+.stage:is(:fullscreen,.is-expanded) #fullscreen svg{width:16px;height:16px}
+.stage:is(:fullscreen,.is-expanded) .touch{width:100%;margin:0;padding:4px 6px;justify-content:space-evenly;flex-wrap:wrap}
+@media(max-height:460px){
+  .stage:is(:fullscreen,.is-expanded) .scoreboard{height:43px}
+  .stage:is(:fullscreen,.is-expanded) .team b{min-width:30px;height:30px;font-size:20px}
+  .stage:is(:fullscreen,.is-expanded) .clock strong{font-size:21px}
+  .stage:is(:fullscreen,.is-expanded) .clock small,.stage:is(:fullscreen,.is-expanded) .special-status{font-size:8px}
+  .stage:is(:fullscreen,.is-expanded) .combo-board{padding:3px 9px 5px}
+  .stage:is(:fullscreen,.is-expanded) .combo-readout{font-size:9px}
+  .stage:is(:fullscreen,.is-expanded) .selection-menu #menu-kicker,
+  .stage:is(:fullscreen,.is-expanded) .selection-menu #menu-description,
+  .stage:is(:fullscreen,.is-expanded) .character q,
+  .stage:is(:fullscreen,.is-expanded) .roster-preview{display:none}
+  .stage:is(:fullscreen,.is-expanded) .keyboard-guide,
+  .stage:is(:fullscreen,.is-expanded) :is(.roster-window,.character-picker,.modes){margin-block:4px}
+}
+@media(max-height:350px){.stage:is(:fullscreen,.is-expanded) .touch button{min-height:32px}}
+
+/* The roster is the whole fullscreen view until kickoff. */
+.selection-menu{width:min(1060px,calc(100% - 24px));padding:clamp(10px,1.9vw,24px)}
+.selection-menu h2{font-size:clamp(24px,4.9vw,64px);line-height:1.02}
+.selection-menu #menu-description{font-size:clamp(12px,1.55vw,17px)}
+.selection-menu .roster-window,.selection-menu .keyboard-guide{font-size:clamp(10px,1.32vw,15px)}
+.selection-menu .keyboard-guide kbd{font-size:inherit}
+.selection-menu .character strong{font-size:clamp(10px,1.48vw,19px)}
+.selection-menu .character-role{font-size:clamp(8px,1.17vw,13px)}
+.selection-menu .character img{width:min(100%,132px);height:clamp(39px,9vw,132px)}
+.selection-menu .character q{font-size:clamp(11px,1.15vw,15px)}
+.selection-menu .modes button,.selection-menu .play{font-size:clamp(12px,1.45vw,18px)}
+.selection-menu .play{padding-block:clamp(9px,1.25vw,15px)}
+
+.stage:is(:fullscreen,.is-expanded) .game:has(.pitch.is-selecting){grid-template-rows:minmax(0,1fr)}
+.stage:is(:fullscreen,.is-expanded) .game:has(.pitch.is-selecting) > :is(.scoreboard,.combo-board){display:none}
+.stage:is(:fullscreen,.is-expanded) .pitch.is-selecting .overlay{display:block;padding:0}
+.stage:is(:fullscreen,.is-expanded) .selection-menu{display:flex;flex-direction:column;gap:clamp(4px,1.05dvh,14px);width:100%;height:100%;min-width:0;padding-block:clamp(9px,2dvh,24px);padding-inline:max(clamp(8px,3vw,64px),calc((100% - 1580px)/2));border:0;border-radius:0;background:radial-gradient(ellipse at 50% 36%,#253d33,#101c1c 72%);box-shadow:none}
+.stage:is(:fullscreen,.is-expanded) .selection-menu h2{font-size:clamp(25px,min(6vw,8dvh),88px)}
+.stage:is(:fullscreen,.is-expanded) .selection-menu :is(#menu-kicker,#menu-description,.roster-window,.keyboard-guide,.modes,.character-picker,.roster-preview){margin-block:0}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character-picker{flex:1 1 0;min-height:0}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character{min-height:0;overflow:hidden;gap:clamp(2px,.6dvh,7px);padding-block:clamp(4px,.9dvh,11px)}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character img{flex:1 1 0;min-height:0;width:min(100%,260px);height:0}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character strong{font-size:clamp(10px,1.85vw,27px)}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character-role{font-size:clamp(8px,1.22vw,17px)}
+.stage:is(:fullscreen,.is-expanded) .selection-menu .character q{min-height:0;font-size:clamp(12px,1.25vw,17px)}
+.stage:is(:fullscreen,.is-expanded) .selection-menu :is(.modes,.play){width:min(82%,640px);align-self:center}
+@media(max-height:380px){
+  .stage:is(:fullscreen,.is-expanded) .selection-menu .keyboard-guide > span:last-child{display:none}
+  .stage:is(:fullscreen,.is-expanded) .selection-menu .modes button,.stage:is(:fullscreen,.is-expanded) .selection-menu .play{padding-block:5px}
+}

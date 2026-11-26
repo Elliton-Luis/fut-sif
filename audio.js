@@ -101,6 +101,8 @@
         wash(630, 310, .058, strength * .085);
         break;
       case 'header': voice(310, 138, .115, .092, 'triangle'); break;
+      case 'slap': wash(2500, 540, .115, .29); voice(210, 85, .10, .10); break;
+      case 'foul': whistle(0, .14); whistle(.17, .19); break;
       case 'wall': wash(980, 265, .14, strength * .13); break;
       case 'ground':
       case 'high':
@@ -119,6 +121,12 @@
         cheer(name === 'perfect' ? .23 : .12);
         break;
       case 'closing': voice(585, 585, .15, .09, 'triangle'); cheer(.14); break;
+      case 'combo-fire':
+        wash(2950, 185, .44, .39);
+        voice(185, 49, .37, .26, 'triangle');
+        voice(1010, 284, .29, .11, 'sawtooth', .045);
+        cheer(.32, .09);
+        break;
       case 'tick': voice(750, 745, .105, .076, 'triangle'); break;
       case 'ready': voice(655, 925, .16, .057, 'triangle'); break;
     }

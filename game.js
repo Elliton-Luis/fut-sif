@@ -24,33 +24,36 @@
   const rosterSlots = [...picker.children];
   const audio = window.arenaSound;
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const W = canvas.width, H = canvas.height, floor = 355, crossbar = 240;
-  const goalLeft = 83, goalRight = W - goalLeft, radius = 14;
+  const W = canvas.width, H = canvas.height, floor = 355, crossbar = 252;
+  const goalLeft = 77, goalRight = W - goalLeft, radius = 14, playerScale = .9;
   const maxBallSpeed = 56, recharge = 600, aimLimit = 108;
+  const comboHits = 4, comboSpeed = 87;
   const basicBallSpeed = .85, alignedHitBoost = 1.05;
   const ballTimeScale = .5;
   const aimGreenMin = -.29, aimGreenMax = -.04;
   const clamp = (n, min, max) => Math.max(min, Math.min(n, max));
   const colors = ['#69c9ff', '#ffa058'];
-  const selection = [0, 1];
+  const selection = [cards.indexOf($('pick-paulo')), cards.indexOf($('pick-natalino'))];
   const cursors = [...selection];
   let firstColumn = 0;
-  let lineup = [0, 1];
+  let lineup = [...selection];
   const keys = [
     ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyM', 'KeyN', 'KeyB', 'KeyV'],
     ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Digit1', 'Digit2', 'Digit3', 'Digit4'],
   ];
-  const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4' };
+  const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4', Numpad9: 'Digit9' };
+  const slapKeys = new Map([['KeyZ', 0], ['Digit9', 1]]);
   const selectionKeys = new Map(keys.flatMap((bindings, side) =>
     bindings.slice(0, 5).map((code, action) => [code, [side, action]])));
-  const controls = new Set([...keys.flat(), 'KeyP']);
+  const controls = new Set([...keys.flat(), ...slapKeys.keys(), 'KeyP']);
   const held = new Set(), pressed = new Set(), pointers = new Map();
   const sc = [$('blue-score'), $('orange-score')];
   const specials = [$('blue-special'), $('orange-special')];
+  const combos = ['blue', 'orange'].map(team => ({ root: $(`${team}-combo`), bar: $(`${team}-combo-bar`), label: $(`${team}-combo-value`) }));
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
-  const players = colors.map((color, i) => ({ color, i, recharge: 0 }));
+  const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0 }));
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, sound = true, freeze = 0, shake = 0;
@@ -82,8 +85,9 @@
     players.forEach((p, i) => Object.assign(p, {
       x: i ? 722 : 278, y: floor, vx: 0, vy: 0, kick: 0, kickType: 0,
       cooldown: 0, struck: false, crouch: false, gait: 0,
+      slapTime: 0, slapDir: 0, knockback: 0,
     }));
-    Object.assign(ball, { x: W / 2, y: 174, vx: serve ? (Math.random() - .5) * 3 : 0, vy: 0, angle: 0, spin: 0, boost: 0, clearOf: null, clearance: 0 });
+    Object.assign(ball, { x: W / 2, y: 174, vx: serve ? (Math.random() - .5) * 3 : 0, vy: 0, angle: 0, spin: 0, boost: 0, comboFlight: false, clearOf: null, clearance: 0 });
     aim = null;
     trail = [];
   }
@@ -99,6 +103,13 @@
       const label = aiming ? (aim.green ? 'VERDE!' : 'MIRANDO') : p.recharge > 0 ? `BICUDO ${Math.ceil(p.recharge / 60)}s` : 'BICUDO OK';
       if (specials[i].dataset.state !== state) specials[i].dataset.state = state;
       if (specials[i].textContent !== label) specials[i].textContent = label;
+      const combo = combos[i];
+      if (combo.bar.value !== p.combo) {
+        const ready = p.combo === comboHits;
+        combo.bar.value = p.combo;
+        combo.label.textContent = ready ? 'PRONTO!' : `${p.combo}/${comboHits}`;
+        combo.root.classList.toggle('combo-ready', ready);
+      }
     });
   }
 
@@ -125,7 +136,7 @@
     audio?.unlock();
     audio?.setInPlay(true);
     resetPositions(true);
-    players.forEach(p => { p.recharge = 0; });
+    players.forEach(p => { p.recharge = 0; p.combo = 0; p.slapCount = 0; });
     clearInput();
     sparks = [];
     shake = 0;
@@ -253,7 +264,8 @@
     const target = dir * (shouldCrouch ? 2.9 : 7.5);
     p.vx += (target - p.vx) * (1 - Math.pow(.72, dt));
     p.vy += .61 * dt;
-    p.x = clamp(p.x + p.vx * dt, goalLeft + 21, goalRight - 21);
+    p.x = clamp(p.x + (p.vx + p.knockback) * dt, goalLeft + 21, goalRight - 21);
+    p.knockback *= Math.pow(.855, dt);
     p.y += p.vy * dt;
     if (p.y >= floor) {
       if (oldY < floor && p.vy > 4) {
@@ -265,7 +277,32 @@
     p.gait += p.vx * dt * .16;
   }
 
-  function headY(p) { return p.y - (p.crouch ? 43 : 65); }
+  function slap(p) {
+    if (++p.slapCount > 3) {
+      p.slapCount = 0;
+      const losesGoal = score[p.i] > 0;
+      if (losesGoal) score[p.i]--;
+      updateHUD();
+      playCall(losesGoal ? 'FALTA! −1 GOL' : 'FALTA!', '#ff9a89');
+      audio?.play('foul');
+      return;
+    }
+
+    const rival = players[1 - p.i];
+    const dx = rival.x - p.x;
+    p.slapDir = Math.sign(dx) || (p.i ? -1 : 1);
+    p.slapTime = 10;
+    if (Math.abs(dx) > 76 || Math.abs(headY(p) - headY(rival)) > 43) return;
+
+    rival.knockback = 18 * p.slapDir;
+    if (aim?.owner === rival) aim = null;
+    shake = 7;
+    burst((p.x + rival.x) / 2, (headY(p) + headY(rival)) / 2, '#fff09e', 22, 7);
+    playCall('TAPA!', p.color);
+    audio?.play('slap');
+  }
+
+  function headY(p) { return p.y - (p.crouch ? 43 : 65) * playerScale; }
 
   function kickPose(p) {
     const reverse = p.kickType === 3;
@@ -277,8 +314,8 @@
 
   function toeContact(p, facing, kickDir) {
     const { stretch, shoeY } = kickPose(p);
-    const dx = ball.x - (p.x + facing * (14 + stretch) + kickDir * 14);
-    const dy = ball.y - (p.y + shoeY);
+    const dx = ball.x - (p.x + (facing * (14 + stretch) + kickDir * 14) * playerScale);
+    const dy = ball.y - (p.y + shoeY * playerScale);
     if (dx * kickDir < -2) return 0;
     return clamp(1 - Math.abs(Math.hypot(dx, dy) - radius) / 21, 0, 1);
   }
@@ -321,6 +358,7 @@
     const dir = p.i ? -1 : 1;
     const shotAngle = green ? angle : clamp(angle + (Math.random() - .5) * .64, -1.26, .58);
     const power = green ? 49 + Math.random() * 4 : 32 + Math.random() * 14;
+    ball.comboFlight = false;
     accelerateBall(dir * Math.cos(shotAngle) * power, Math.sin(shotAngle) * power, 1);
     ball.spin = dir * (green ? .24 : (Math.random() - .5) * 1.55);
     ball.boost = 28;
@@ -339,6 +377,25 @@
     audio?.play(green ? 'perfect' : 'special');
   }
 
+  function fireCombo(p, dir, high) {
+    const distance = Math.max(36, (p.i ? goalLeft - ball.x : goalRight - ball.x) * dir);
+    const targetY = crossbar + (floor - crossbar) * (high ? .28 : .66);
+    const angle = clamp(Math.atan2(targetY - ball.y, distance) - .235 * distance / (comboSpeed ** 2)
+      + (Math.random() - .5) * .17, -.40, .26);
+    ball.vx = dir * Math.cos(angle) * comboSpeed;
+    ball.vy = Math.sin(angle) * comboSpeed;
+    ball.spin = dir * (high ? -.17 : .22);
+    ball.comboFlight = true;
+    ball.boost = 42;
+    ball.boostColor = '255,222,100';
+    p.combo = 0;
+    shake = 15;
+    crowdEnergy = 1;
+    burst(ball.x, ball.y, '#ffde64', 46, 13);
+    playCall('SUPERCHUTE!', '#ffde64');
+    audio?.play('combo-fire');
+  }
+
   function bumpCircle(x, y, r, vx, vy, bounce, playerHit = false) {
     const dx = ball.x - x, dy = ball.y - y, distance = Math.hypot(dx, dy);
     if (distance >= r + radius) return false;
@@ -350,22 +407,34 @@
     if (speed >= 0) return false;
     const outX = ball.vx - (1 + bounce) * speed * nx;
     const outY = ball.vy - (1 + bounce) * speed * ny;
-    if (playerHit && Math.hypot(outX, outY) > .001) accelerateBall(outX, outY);
+    if (playerHit && Math.hypot(outX, outY) > .001) {
+      ball.comboFlight = false;
+      accelerateBall(outX, outY);
+    }
     else { ball.vx = outX; ball.vy = outY; }
     ball.spin += (nx * (ball.vy - vy) - ny * (ball.vx - vx)) * .016;
     return true;
   }
 
   function playerBall(p) {
-    const dir = p.i ? -1 : 1, foot = p.y - (p.crouch ? 11 : 25);
+    const dir = p.i ? -1 : 1, foot = p.y - (p.crouch ? 11 : 25) * playerScale;
     const ahead = (ball.x - p.x) * dir;
     const reverse = p.kickType === 3;
     const reachable = reverse
-      ? p.y < floor && Math.abs(ahead) < 65 && ball.y > headY(p) - 35 && ball.y < p.y + 30
-      : ahead > -12 && ahead < 76 && Math.abs(ball.y - foot) < 47;
+      ? p.y < floor && Math.abs(ahead) < 65 * playerScale && ball.y > headY(p) - 35 * playerScale && ball.y < p.y + 30 * playerScale
+      : ahead > -12 * playerScale && ahead < 76 * playerScale && Math.abs(ball.y - foot) < 47 * playerScale;
     if (p.kick > 0 && !p.struck && reachable) {
       const high = p.kickType === 2;
       const kickDir = reverse ? -dir : dir;
+      p.struck = true;
+      // O mesmo movimento só conta uma vez, mesmo com vários passos de colisão.
+      ball.clearOf = p;
+      ball.clearance = reverse ? 13 : 5;
+      if (!reverse && p.combo === comboHits) {
+        fireCombo(p, dir, high);
+        return;
+      }
+      ball.comboFlight = false;
       const run = Math.max(0, p.vx * kickDir);
       const contact = toeContact(p, dir, kickDir);
       const power = (reverse ? 14 : high ? 10.5 : 14.5) + run * (1.15 + contact * 3.1) + contact * 3.5;
@@ -373,10 +442,6 @@
       accelerateBall(kickDir * power,
         (reverse ? -4.8 : high ? -10.4 : -2.35) + p.vy * .2);
       ball.spin = kickDir * (reverse ? -.25 : high ? -.28 : .3);
-      // Recuos atravessam o próprio jogador sem ricochetear no corpo dele.
-      ball.clearOf = p;
-      ball.clearance = reverse ? 13 : 5;
-      p.struck = true;
       shake = runningToeKick ? 8 : high ? 3 : 5;
       burst(ball.x, ball.y, p.color, runningToeKick ? 28 : reverse ? 23 : 14, runningToeKick ? 8 : 5);
       if (runningToeKick) {
@@ -386,14 +451,18 @@
       } else if (reverse) playCall('RECUO AÉREO!', p.color);
       else if (Math.hypot(ball.vx, ball.vy) >= 32) playCall('QUE BOMBA!', p.color);
       audio?.play(reverse ? 'reverse' : high ? 'high' : 'ground');
+      if (!reverse && ++p.combo === comboHits) {
+        playCall('COMBO PRONTO!', p.color);
+        audio?.play('ready');
+      }
       return;
     }
     if (ball.clearOf === p && ball.clearance > 0) return;
-    if (bumpCircle(p.x, headY(p), 28, p.vx, p.vy, 1.04, true)) {
+    if (bumpCircle(p.x, headY(p), 28 * playerScale, p.vx, p.vy, 1.04, true)) {
       burst(ball.x, ball.y, p.color, 5, 3);
       audio?.play('header');
     }
-    bumpCircle(p.x, p.y - 19, 16, p.vx, p.vy, .67, true);
+    bumpCircle(p.x, p.y - 19 * playerScale, 16 * playerScale, p.vx, p.vy, .67, true);
   }
 
   function stepBall(dt) {
@@ -401,9 +470,10 @@
     ball.vx += ball.spin * .035 * dt;
     ball.vy += (.47 + ball.spin * ball.vx * .009) * dt;
     const speed = Math.hypot(ball.vx, ball.vy);
-    if (speed > maxBallSpeed) {
-      ball.vx *= maxBallSpeed / speed;
-      ball.vy *= maxBallSpeed / speed;
+    const limit = ball.comboFlight ? comboSpeed : maxBallSpeed;
+    if (speed > limit) {
+      ball.vx *= limit / speed;
+      ball.vy *= limit / speed;
     }
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
@@ -474,6 +544,7 @@
     }
     const actions = [human(0), cpu ? ai(players[1]) : human(1)];
     players.forEach(p => {
+      p.slapTime = Math.max(0, p.slapTime - dt);
       if (p.recharge > 0 && p.recharge <= dt && (p.i === 0 || !cpu)) audio?.play('ready');
       p.recharge = Math.max(0, p.recharge - dt);
     });
@@ -495,8 +566,8 @@
     for (const p of players) if (p !== caster) stepPlayer(p, actions[p.i], dt);
     pressed.clear();
     const [left, right] = players;
-    if (Math.abs(left.y - right.y) < 62 && Math.abs(left.x - right.x) < 46) {
-      const gap = 46 - Math.abs(left.x - right.x);
+    if (Math.abs(left.y - right.y) < 62 * playerScale && Math.abs(left.x - right.x) < 46 * playerScale) {
+      const gap = 46 * playerScale - Math.abs(left.x - right.x);
       const sign = Math.sign(right.x - left.x) || 1;
       if (left !== caster) left.x = clamp(left.x - gap * sign * (caster ? 1 : .5), goalLeft + 21, goalRight - 21);
       if (right !== caster) right.x = clamp(right.x + gap * sign * (caster ? 1 : .5), goalLeft + 21, goalRight - 21);
@@ -586,7 +657,7 @@
       bg.fillStyle = rand() > .5 ? '#d0f0aa25' : '#15392639';
       bg.fillRect(rand() * W, 285 + rand() * (H - 285), 1 + rand() * 4, 1);
     }
-    const paint = '#d1ecca98';
+    const paint = '#e4f2d7bb';
     line(bg, [[19, floor], [981, floor]], paint, 2);
     line(bg, [[W / 2, 285], [W / 2, H]], paint, 2);
     bg.strokeStyle = paint; bg.lineWidth = 2;
@@ -606,12 +677,12 @@
 
   function drawPlayer(p) {
     const character = lineup[p.i], portrait = portraits[character];
-    const dir = p.i ? -1 : 1, hy = headY(p) - p.y;
+    const dir = p.i ? -1 : 1, hy = (headY(p) - p.y) / playerScale;
     const skin = p.i ? '#cb855e' : '#efad7e';
     const outline = '#19262b';
-    oval(ctx, p.x, floor + 4, 39 - Math.min((floor - p.y) / 8, 14), 8, '#14302865');
+    oval(ctx, p.x, floor + 4, (39 - Math.min((floor - p.y) / 8, 14)) * playerScale, 8 * playerScale, '#14302885');
     ctx.save();
-    ctx.translate(p.x, p.y); ctx.scale(dir, 1);
+    ctx.translate(p.x, p.y); ctx.scale(dir * playerScale, playerScale);
     ctx.lineJoin = ctx.lineCap = 'round';
     const stride = p.y < floor ? 7 : Math.sin(p.gait) * Math.min(Math.abs(p.vx) * 1.6, 10);
     const { stretch, shoeY } = p.kick ? kickPose(p) : { stretch: stride, shoeY: -4 };
@@ -628,6 +699,13 @@
     line(ctx, [[6, -21], [11 + stretch, shoeY]], outline, 12);
     oval(ctx, 14 + stretch, shoeY, 14, 6, '#f5f3df');
     line(ctx, [[10 + stretch, shoeY + 4], [24 + stretch, shoeY + 4]], outline, 3);
+    if (p.slapTime) {
+      const side = p.slapDir * dir;
+      const hand = side * (23 + 29 * Math.sin(p.slapTime / 10 * Math.PI));
+      line(ctx, [[side * 11, shirtY], [hand, -52]], outline, 10);
+      line(ctx, [[side * 13, shirtY - 1], [hand, -52]], skin, 6);
+      oval(ctx, hand, -53, 7, 5, skin);
+    }
     ctx.save(); ctx.translate(0, hy);
     if (portrait.naturalWidth) {
       ctx.drawImage(portrait, -42, -45, 84, 84);
@@ -663,8 +741,9 @@
       oval(ctx, x, y, 12 - i, 12 - i, `rgba(${rgb},${opacity})`);
     });
     ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.angle);
-    oval(ctx, 0, 0, 15, 15, '#1a2828');
-    oval(ctx, 0, 0, 12.6, 12.6, '#f4f3db');
+    if (ball.comboFlight && ball.boost) oval(ctx, 0, 0, 20, 20, '#ffde64a8');
+    oval(ctx, 0, 0, 16, 16, '#111b1d');
+    oval(ctx, 0, 0, 12.6, 12.6, '#fffdf1');
     ctx.fillStyle = '#243135';
     ctx.beginPath();
     for (let i = 0; i < 5; i++) {
@@ -794,15 +873,12 @@
 
   function stopPreview() { window.speechSynthesis?.cancel(); }
 
-  function pickCharacter(index, side) {
-    if (phase !== 'menu' && phase !== 'end') return;
-    const rival = 1 - side;
-    if (selection[rival] === index) selection[rival] = selection[side];
-    selection[side] = cursors[side] = index;
-    revealCursor(side);
-    updatePicker();
-    if (phase === 'menu') applyLineup();
+  function showCharacterQuote(index) {
     rosterPreview.textContent = `${names[index]}: “${quotes[index].textContent}”`;
+  }
+
+  function speakCharacter(index) {
+    showCharacterQuote(index);
     if (!sound || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     stopPreview();
     const speech = new window.SpeechSynthesisUtterance(quotes[index].textContent);
@@ -816,7 +892,18 @@
     const row = current % rosterRows, column = columnOf(current);
     const nextRow = clamp(row + (action === 2 ? -1 : action === 3 ? 1 : 0), 0, rosterRows - 1);
     const nextColumn = clamp(column + (action === 0 ? -1 : action === 1 ? 1 : 0), 0, rosterColumns - 1);
-    cursors[side] = nextColumn * rosterRows + nextRow;
+    const next = nextColumn * rosterRows + nextRow;
+    cursors[side] = next;
+    if (next < cards.length && next !== selection[side]) {
+      const rival = 1 - side;
+      if (selection[rival] === next) {
+        selection[rival] = selection[side];
+        if (cursors[rival] === next) cursors[rival] = selection[rival];
+      }
+      selection[side] = next;
+      if (phase === 'menu') applyLineup();
+      showCharacterQuote(next);
+    }
     revealCursor(side);
     updatePicker();
   }
@@ -904,13 +991,19 @@
       if (document.activeElement?.matches('button')) picker.focus({ preventScroll: true });
       const [side, action] = binding;
       if (action < 4) moveCursor(side, action);
-      else if (!e.repeat && cursors[side] < cards.length) pickCharacter(cursors[side], side);
+      else if (!e.repeat) speakCharacter(selection[side]);
       return;
     }
     if (!controls.has(key)) return;
     e.preventDefault();
     if (key === 'KeyP') { if (!e.repeat) togglePause(); return; }
     if (phase === 'paused') return;
+    if (slapKeys.has(key)) {
+      const side = slapKeys.get(key);
+      if (phase === 'playing' && !(side === 1 && cpu) && !held.has(key) && !e.repeat) slap(players[side]);
+      held.add(key);
+      return;
+    }
     if (!held.has(key) && !e.repeat) pressed.add(key);
     held.add(key);
   });
@@ -947,6 +1040,7 @@
 
   drawBackground();
   resetPositions();
+  applyLineup();
   updatePicker();
   let prev = 0, accumulator = 0;
   const step = 1000 / 120;
