@@ -315,18 +315,18 @@
     selection[0] = match.a;
     selection[1] = match.b;
     applyLineup();
-    players.forEach(p => { p.aiStyle = null; p.aiLevel = roundIndex + 2; p.speedScale = 1.08; p.jumpScale = 1.05; p.recharge = 0; p.combo = 2; p.slapCount = 0; p.slapCooldown = 0; p.warned = false; });
+    players.forEach(p => { p.aiStyle = null; p.aiLevel = roundIndex + 3; p.speedScale = 1.38; p.jumpScale = 1.12; p.recharge = 0; p.combo = 3; p.slapCount = 0; p.slapCooldown = 0; p.warned = false; });
     yellowCards.forEach(card => { card.hidden = true; });
     overlay.hidden = true;
     resultScreen.hidden = true;
     bracketScreen.hidden = true;
     pitch.classList.remove('is-selecting', 'is-bracket');
     resetPositions(true);
-    ball.vx = (Math.random() < .5 ? -1 : 1) * 9;
-    ball.vy = -5;
+    ball.vx = (Math.random() < .5 ? -1 : 1) * 15;
+    ball.vy = -7;
     sparks = [];
     shake = 0;
-    crowdEnergy = .45;
+    crowdEnergy = .85;
     netCooldown = 0;
     clearCall();
     clearCelebration();
@@ -745,13 +745,13 @@
   function goal(i) {
     if (phase === 'highlight') {
       phase = 'highlight-goal';
-      freeze = .65;
+      freeze = .45;
       clearCall();
       announcement.textContent = `GOLAÇO DO ${playerName(i)}!`;
       announcement.style.color = colors[i];
-      shake = 9;
+      shake = 12;
       crowdEnergy = 1;
-      burst(ball.x, ball.y, colors[i], 55, 12);
+      burst(ball.x, ball.y, colors[i], 60, 14);
       confetti(colors[i]);
       audio?.play('goal');
       return;
@@ -788,6 +788,21 @@
     const crouch = isHeld(down) || Boolean(stick && stick.y > .55);
     return [dir, jump, crouch,
       pressed.has(reverse) ? 3 : pressed.has(lob) ? 2 : Number(pressed.has(groundKick)), pressed.has(special)];
+  }
+
+  function aiHighlight(p) {
+    if (aim?.owner === p) return [0, false, false, 0, aim.elapsed > 7 && aim.green];
+    const dir = p.i ? -1 : 1;
+    const target = clamp(ball.x + ball.vx * ballTimeScale * 5 - dir * 32, goalLeft + 34, goalRight - 34);
+    const dx = target - p.x;
+    const ahead = (ball.x - p.x) * dir;
+    const near = ahead > -28 && ahead < 105;
+    const jump = near && ball.y < p.y - 54 && ball.y > p.y - 200;
+    let kick = 0;
+    if (p.y < floor - 18 && Math.abs(ahead) < 62 && ball.y < p.y + 12 && ahead < 4) kick = 3;
+    else if (near && Math.abs(ball.y - (p.y - 26)) < 62) kick = ball.y < p.y - 36 ? 2 : 1;
+    const special = canAim(p) && (p.i ? ball.x < 760 : ball.x > 240);
+    return [Math.abs(dx) < 5 ? dir : Math.sign(dx), jump, false, kick, special];
   }
 
   function ai(p) {
@@ -1143,26 +1158,36 @@
       freeze -= dt / 60;
       if (freeze > 0) return;
       const wasHighlight = phase === 'highlight-goal';
-      if (phase === 'goal' || wasHighlight) { resetPositions(true); clearCelebration(); }
-      else audio?.play('start');
+      if (phase === 'goal' || wasHighlight) {
+        resetPositions(true);
+        clearCelebration();
+        if (wasHighlight) {
+          ball.vx = (Math.random() < .5 ? -1 : 1) * 15;
+          ball.vy = -7;
+          players.forEach(p => { p.recharge = 0; p.combo = 3; });
+        }
+      } else audio?.play('start');
       phase = wasHighlight ? 'highlight' : 'playing';
       announcement.textContent = '';
       announcement.style.color = '';
     }
     const isHighlight = phase === 'highlight';
-    const actions = isHighlight ? [ai(players[0]), ai(players[1])] : [human(0), cpu ? ai(players[1]) : human(1)];
+    const simDt = isHighlight ? dt * 1.4 : dt;
+    if (isHighlight) crowdEnergy = Math.max(crowdEnergy, .6);
+    const actions = isHighlight ? [aiHighlight(players[0]), aiHighlight(players[1])] : [human(0), cpu ? ai(players[1]) : human(1)];
     players.forEach(p => {
-      p.slapTime = Math.max(0, p.slapTime - dt);
-      p.slapCooldown = Math.max(0, p.slapCooldown - dt);
-      if (p.recharge > 0 && p.recharge <= dt && (p.i === 0 || !cpu)) audio?.play('ready');
-      p.recharge = Math.max(0, p.recharge - dt);
+      p.slapTime = Math.max(0, p.slapTime - simDt);
+      p.slapCooldown = Math.max(0, p.slapCooldown - simDt);
+      const rechargeStep = isHighlight ? simDt * 4 : simDt;
+      if (p.recharge > 0 && p.recharge <= rechargeStep && !isHighlight && (p.i === 0 || !cpu)) audio?.play('ready');
+      p.recharge = Math.max(0, p.recharge - rechargeStep);
     });
     const aimingAtStart = aim;
     if (aim) {
       if (actions[aim.owner.i][4]) fireSpecial();
       else {
         const wasGreen = aim.green;
-        aim.elapsed += dt;
+        aim.elapsed += isHighlight ? simDt * 1.6 : simDt;
         pointAim(aim);
         if (!wasGreen && aim.green) audio?.play('green');
         if (aim.elapsed >= aimLimit) fireSpecial();
@@ -1172,7 +1197,7 @@
       if (owner) beginAim(owner);
     }
     const caster = (aim || aimingAtStart)?.owner;
-    for (const p of players) if (p !== caster) stepPlayer(p, actions[p.i], dt);
+    for (const p of players) if (p !== caster) stepPlayer(p, actions[p.i], simDt);
     pressed.clear();
     const [left, right] = players;
     if (Math.abs(left.y - right.y) < 62 * playerScale && Math.abs(left.x - right.x) < 46 * playerScale) {
@@ -1182,8 +1207,8 @@
       if (right !== caster) right.x = clamp(right.x + gap * sign * (caster ? 1 : .5), goalLeft + 21, goalRight - 21);
     }
     if (!aim) {
-      ball.boost = Math.max(0, ball.boost - dt);
-      const ballStep = dt * ballTimeScale / 2;
+      ball.boost = Math.max(0, ball.boost - simDt);
+      const ballStep = simDt * ballTimeScale / 2;
       stepBall(ballStep);
       if (phase === 'playing' || phase === 'highlight') stepBall(ballStep);
     }
