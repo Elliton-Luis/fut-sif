@@ -1346,8 +1346,19 @@
     } catch { /* fallback draws directly on ctx */ }
   }
 
+  const bodyBuilds = {
+    slim: { w: 16.5, h: 15.5, crouchH: 10.5, leg: 11, chest: 0 },
+    lean: { w: 18.5, h: 16, crouchH: 11, leg: 11.5, chest: 1.5 },
+    athletic: { w: 20.5, h: 16.5, crouchH: 11.5, leg: 12.5, chest: 2.5 },
+    stocky: { w: 21.5, h: 16.5, crouchH: 11.5, leg: 12.5, chest: 0 },
+    chubby: { w: 23, h: 17, crouchH: 12, leg: 13, chest: 0 },
+    broad: { w: 24.5, h: 17.5, crouchH: 12.5, leg: 13.5, chest: 0 },
+  };
+  const charBuilds = cards.map(card => bodyBuilds[card.dataset.build] || bodyBuilds.athletic);
+
   function drawPlayer(p) {
     const character = lineup[p.i], portrait = portraits[character];
+    const build = charBuilds[character];
     const inverted = p.i === 1 && mirrorMatch();
     const dir = p.i ? -1 : 1, hy = (headY(p) - p.y) / playerScale;
     const skin = p.i ? '#cb855e' : '#efad7e';
@@ -1359,17 +1370,20 @@
     ctx.lineJoin = ctx.lineCap = 'round';
     const stride = p.y < floor ? 7 : Math.sin(p.gait) * Math.min(Math.abs(p.vx) * 1.6, 10);
     const { stretch, shoeY } = p.kick ? kickPose(p) : { stretch: stride, shoeY: -4 };
-    line(ctx, [[-7, -22], [-10 - stride, -5]], outline, 12);
+    line(ctx, [[-7, -22], [-10 - stride, -5]], outline, build.leg);
     oval(ctx, -9 - stride, -5, 13, 5, '#dfebe7');
     const shirtY = p.crouch ? -19 : -29;
-    const shirtWidth = cards[character].dataset.build === 'slim' ? 16 : 20;
-    oval(ctx, 0, shirtY, shirtWidth, p.crouch ? 11 : 16, outline);
-    oval(ctx, 0, shirtY, shirtWidth - 4, p.crouch ? 8 : 12, character === 0 ? (p.i ? '#b66b37' : '#32678a') : p.color);
+    const shirtH = p.crouch ? build.crouchH : build.h;
+    const shirtColor = character === 0 ? (p.i ? '#b66b37' : '#32678a') : p.color;
+    oval(ctx, 0, shirtY, build.w, shirtH, outline);
+    if (build.chest && !p.crouch) oval(ctx, 0, shirtY - 4, build.w + build.chest, shirtH * .68, outline);
+    oval(ctx, 0, shirtY, build.w - 4, shirtH - 3.5, shirtColor);
+    if (build.chest && !p.crouch) oval(ctx, 0, shirtY - 4, build.w + build.chest - 4, shirtH * .68 - 3.2, shirtColor);
     if (character === 0) {
       line(ctx, [[-9, shirtY - 5], [0, shirtY + 2], [9, shirtY - 5]], p.color, 2.3);
       line(ctx, [[0, shirtY + 2], [0, shirtY + 7]], outline, 2);
     }
-    line(ctx, [[6, -21], [11 + stretch, shoeY]], outline, 12);
+    line(ctx, [[6, -21], [11 + stretch, shoeY]], outline, build.leg);
     oval(ctx, 14 + stretch, shoeY, 14, 6, '#f5f3df');
     line(ctx, [[10 + stretch, shoeY + 4], [24 + stretch, shoeY + 4]], outline, 3);
     if (p.slapTime) {
