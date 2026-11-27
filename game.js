@@ -333,10 +333,10 @@
     clearInput();
     setUrgent(false);
     score = [...match.score];
-    clock = 10;
+    clock = 60;
     phase = 'highlight';
     pause.disabled = true;
-    period.textContent = 'MELHORES JOGADAS';
+    period.textContent = 'MELHORES JOGADAS · 6×';
     announcement.textContent = '';
     const penText = match.pens ? ` (${match.pens[0]}×${match.pens[1]} PÊN)` : '';
     highlightLabel.textContent = `★ ${roundLabels[roundIndex]} · ${names[match.a]} ${match.score[0]} × ${match.score[1]} ${names[match.b]}${penText}`;
@@ -607,10 +607,12 @@
     const style = playStyles[cards[lineup[1]].id.replace('pick-', '')] ?? null;
     players.forEach(p => { p.aiStyle = null; p.aiLevel = 1; p.speedScale = 1; p.jumpScale = 1; });
     if (tournament.active && style) {
+      const round = tournament.round;
+      const pace = [.72, .85, .96, 1.04][round] ?? 1;
       players[1].aiStyle = style;
-      players[1].aiLevel = tournament.round + 1;
-      players[1].speedScale = style.speed;
-      players[1].jumpScale = 1 + style.jump / 120;
+      players[1].aiLevel = round;
+      players[1].speedScale = style.speed * pace;
+      players[1].jumpScale = round === 0 ? .92 : round === 1 ? .98 : 1 + style.jump / 140;
     }
     pitch.classList.remove('is-selecting');
     audio?.unlock();
@@ -793,16 +795,27 @@
   function aiHighlight(p) {
     if (aim?.owner === p) return [0, false, false, 0, aim.elapsed > 7 && aim.green];
     const dir = p.i ? -1 : 1;
-    const target = clamp(ball.x + ball.vx * ballTimeScale * 5 - dir * 32, goalLeft + 34, goalRight - 34);
-    const dx = target - p.x;
+    const rival = players[1 - p.i];
+    const distRival = (rival.x - p.x) * dir;
     const ahead = (ball.x - p.x) * dir;
-    const near = ahead > -28 && ahead < 105;
+    const ballComing = ball.vx * dir < -2;
+    const myHalf = p.i ? ball.x > W * .44 : ball.x < W * .56;
+    let target;
+    if (!myHalf && distRival < 180) {
+      target = p.i ? W - 215 : 215;
+    } else if (Math.abs(distRival) < 95 && (ball.y < floor - 70 || !ballComing)) {
+      target = clamp(p.x - dir * 120, goalLeft + 55, goalRight - 55);
+    } else {
+      target = clamp(ball.x + ball.vx * ballTimeScale * 5 - dir * 40, goalLeft + 44, goalRight - 44);
+    }
+    const dx = target - p.x;
+    const near = ahead > -22 && ahead < 102;
     const jump = near && ball.y < p.y - 54 && ball.y > p.y - 200;
     let kick = 0;
     if (p.y < floor - 18 && Math.abs(ahead) < 62 && ball.y < p.y + 12 && ahead < 4) kick = 3;
     else if (near && Math.abs(ball.y - (p.y - 26)) < 62) kick = ball.y < p.y - 36 ? 2 : 1;
-    const special = canAim(p) && (p.i ? ball.x < 760 : ball.x > 240);
-    return [Math.abs(dx) < 5 ? dir : Math.sign(dx), jump, false, kick, special];
+    const special = canAim(p) && Math.abs(distRival) > 65 && (p.i ? ball.x < 760 : ball.x > 240);
+    return [Math.abs(dx) < 8 ? 0 : Math.sign(dx), jump, false, kick, special];
   }
 
   function ai(p) {
@@ -822,13 +835,17 @@
       return [Math.abs(dx) < 9 ? 0 : Math.sign(dx), jump, false, kick, ball.x > 570 && ball.x < 770 && canAim(p)];
     }
     const style = p.aiStyle;
-    const level = p.aiLevel ?? 1;
-    const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * (8 + level) + 44 : 125) + style.offset, 430, 880);
-    const dx = target - p.x, reach = 16 + style.reach, near = ball.x < p.x + reach && ball.x > p.x - reach - 82;
-    const jump = near && ball.y < p.y - 78 - style.jump && ball.y > p.y - 172 && ball.vy > -3;
-    const kick = near && Math.abs(ball.y - (p.y - 27)) < 52 ? (ball.y < p.y - 34 ? style.high : style.low) : 0;
-    const special = style.special && ball.x > 570 - level * 12 && ball.x < 770 + level * 12 && canAim(p);
-    return [Math.abs(dx) < Math.max(4, 9 - level) ? 0 : Math.sign(dx), jump, false, kick, special];
+    const round = p.aiLevel ?? 0;
+    const lead = [3, 6, 9, 11][round] ?? 8;
+    const deadzone = [28, 18, 11, 6][round] ?? 9;
+    const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * lead + 48 : 135) + style.offset, 440, 885);
+    const dx = target - p.x, reach = 14 + style.reach * (.55 + round * .15);
+    const near = ball.x < p.x + reach && ball.x > p.x - reach - 74;
+    const jump = near && (round > 0 || ball.y < p.y - 96) && ball.y < p.y - 78 - style.jump && ball.y > p.y - 172 && ball.vy > -3;
+    const kickRange = round === 0 ? 38 : round === 1 ? 46 : 52;
+    const kick = near && Math.abs(ball.y - (p.y - 27)) < kickRange ? (ball.y < p.y - 34 ? style.high : style.low) : 0;
+    const special = round >= 1 && style.special && ball.x > 590 - round * 14 && ball.x < 760 + round * 10 && canAim(p) && (round >= 2 || Math.random() < .15);
+    return [Math.abs(dx) < deadzone ? 0 : Math.sign(dx), jump, false, kick, special];
   }
 
   function stepPlayer(p, [dir, jump, crouch, kick], dt) {
@@ -1200,11 +1217,13 @@
     for (const p of players) if (p !== caster) stepPlayer(p, actions[p.i], simDt);
     pressed.clear();
     const [left, right] = players;
-    if (Math.abs(left.y - right.y) < 62 * playerScale && Math.abs(left.x - right.x) < 46 * playerScale) {
-      const gap = 46 * playerScale - Math.abs(left.x - right.x);
+    const minBodyGap = (isHighlight ? 64 : 46) * playerScale;
+    if (Math.abs(left.y - right.y) < 62 * playerScale && Math.abs(left.x - right.x) < minBodyGap) {
+      const gap = minBodyGap - Math.abs(left.x - right.x);
       const sign = Math.sign(right.x - left.x) || 1;
       if (left !== caster) left.x = clamp(left.x - gap * sign * (caster ? 1 : .5), goalLeft + 21, goalRight - 21);
       if (right !== caster) right.x = clamp(right.x + gap * sign * (caster ? 1 : .5), goalLeft + 21, goalRight - 21);
+      if (isHighlight && !caster) { left.knockback = -4.5 * sign; right.knockback = 4.5 * sign; }
     }
     if (!aim) {
       ball.boost = Math.max(0, ball.boost - simDt);
@@ -1214,7 +1233,7 @@
     }
     if (phase === 'playing') trackKeepers(dt);
     const before = Math.ceil(clock);
-    clock = Math.max(0, clock - dt / 60);
+    clock = Math.max(0, clock - (isHighlight ? dt * 6 : dt) / 60);
     const leftOnClock = Math.ceil(clock);
     if (phase === 'playing' && leftOnClock < before && leftOnClock > 0 && leftOnClock <= 10) {
       if (leftOnClock === 10) {
@@ -1503,8 +1522,10 @@
   }
 
   function updatePicker() {
+    const soloPick = mode === 'tournament';
+    menuPanel.classList.toggle('is-tournament-pick', soloPick);
     cards.forEach((card, index) => {
-      const blue = selection[0] === index, orange = selection[1] === index;
+      const blue = selection[0] === index, orange = !soloPick && selection[1] === index;
       card.classList.toggle('blue', blue);
       card.classList.toggle('orange', orange);
       card.classList.toggle('reserve', !blue && !orange);
@@ -1513,7 +1534,7 @@
     });
     rosterSlots.forEach((slot, index) => {
       slot.classList.toggle('cursor-p1', index === cursors[0]);
-      slot.classList.toggle('cursor-p2', index === cursors[1]);
+      slot.classList.toggle('cursor-p2', !soloPick && index === cursors[1]);
     });
     syncRosterWindow();
   }
@@ -1724,7 +1745,8 @@
       if (!binding) return;
       e.preventDefault();
       if (document.activeElement?.matches('button')) picker.focus({ preventScroll: true });
-      const [side, action] = binding;
+      const [rawSide, action] = binding;
+      const side = mode === 'tournament' ? 0 : rawSide;
       if (action < 4) moveCursor(side, action);
       else if (!e.repeat) speakCharacter(selection[side]);
       return;
