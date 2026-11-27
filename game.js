@@ -1355,6 +1355,7 @@
     broad: { w: 24.5, h: 17.5, crouchH: 12.5, leg: 13.5, chest: 0 },
   };
   const charBuilds = cards.map(card => bodyBuilds[card.dataset.build] || bodyBuilds.athletic);
+  const charShirts = cards.map(card => card.dataset.shirt || '');
 
   function drawPlayer(p) {
     const character = lineup[p.i], portrait = portraits[character];
@@ -1374,7 +1375,7 @@
     oval(ctx, -9 - stride, -5, 13, 5, '#dfebe7');
     const shirtY = p.crouch ? -19 : -29;
     const shirtH = p.crouch ? build.crouchH : build.h;
-    const shirtColor = character === 0 ? (p.i ? '#b66b37' : '#32678a') : p.color;
+    const shirtColor = charShirts[character] || p.color;
     oval(ctx, 0, shirtY, build.w, shirtH, outline);
     if (build.chest && !p.crouch) oval(ctx, 0, shirtY - 4, build.w + build.chest, shirtH * .68, outline);
     oval(ctx, 0, shirtY, build.w - 4, shirtH - 3.5, shirtColor);
