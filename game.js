@@ -298,12 +298,12 @@
     const dx = rival.x - p.x;
     p.slapDir = Math.sign(dx) || (p.i ? -1 : 1);
     p.slapTime = 7;
-    if (Math.abs(dx) <= 76 && Math.abs(headY(p) - headY(rival)) <= 43) {
-      rival.knockback = 12 * p.slapDir;
-      if (aim?.owner === rival) aim = null;
-      burst((p.x + rival.x) / 2, (headY(p) + headY(rival)) / 2, '#fff09e', 6, 3);
-      audio?.play('slap');
-    }
+    if (Math.abs(dx) > 76 || Math.abs(headY(p) - headY(rival)) > 43) return;
+
+    rival.knockback = 12 * p.slapDir;
+    if (aim?.owner === rival) aim = null;
+    burst((p.x + rival.x) / 2, (headY(p) + headY(rival)) / 2, '#fff09e', 6, 3);
+    audio?.play('slap');
 
     if (++p.slapCount < 3) return;
     p.slapCount = 0;
