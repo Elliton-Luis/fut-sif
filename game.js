@@ -35,6 +35,39 @@
   const aimGreenMin = -.29, aimGreenMax = -.04;
   const clamp = (n, min, max) => Math.max(min, Math.min(n, max));
   const colors = ['#69c9ff', '#ffa058'];
+  const victoryLines = [
+    'Parece que {perdedor} não aguentou o amansa-boi de {vencedor}!',
+    '{perdedor} foi buscar a bola. {vencedor} aproveitou e buscou a vitória.',
+    '{vencedor} jogou futebol. {perdedor} jogou no modo espectador.',
+    '{perdedor} trouxe a chuteira. O futebol ficou todo com {vencedor}.',
+    '{vencedor} pediu passagem e {perdedor} ainda abriu o portão.',
+    '{perdedor} marcou presença. {vencedor} marcou no placar.',
+    '{vencedor} mandou a bola pro gol. {perdedor} mandou um “foi lag”.',
+    '{perdedor} deixou o gol tão aberto que {vencedor} quase entrou de carro.',
+    '{vencedor} ganhou. {perdedor} já tá pedindo revisão no VAR da cozinha.',
+    '{perdedor} foi com sede ao pote. {vencedor} já tinha bebido a água.',
+    '{vencedor} fez a festa e {perdedor} saiu com a louça pra lavar.',
+    '{perdedor} botou a culpa na física. {vencedor} também não entendeu, mas ganhou.',
+    '{vencedor} jogou no simples. {perdedor} complicou até o cadarço.',
+    '{perdedor} veio de salto alto. {vencedor} nem limpou a chuteira.',
+    '{vencedor} foi pro gol. {perdedor} foi na fé.',
+    '{perdedor} pediu revanche antes de {vencedor} terminar de comemorar.',
+    '{vencedor} ganhou no campo. {perdedor} ganhou no “quase” por unanimidade.',
+    '{perdedor} tentou estacionar o ônibus, mas {vencedor} achou a vaga primeiro.',
+    '{vencedor} levou a vitória. Pra {perdedor} sobrou o áudio de três minutos explicando.',
+    '{perdedor} tinha um plano. Aí {vencedor} encostou na bola.',
+    '{vencedor} tocou o terror. {perdedor} tocou pra lateral.',
+    '{perdedor} foi ler o manual. Quando voltou, {vencedor} já tava comemorando.',
+    '{vencedor} pegou o atalho pro gol. {perdedor} ficou preso na rotatória.',
+    '{perdedor} jurou que era só aquecimento. {vencedor} agradeceu pelo treino.',
+    '{vencedor} resolveu no campo. {perdedor} vai tentar resolver no grupo.',
+    '{perdedor} chutou com tanta esperança que até {vencedor} ficou com pena.',
+    '{vencedor} deu trabalho. {perdedor} deu trabalho pro gandula.',
+    '{perdedor} trouxe o dominó. {vencedor} trouxe a bola.',
+    '{vencedor} comemorou. {perdedor} jurou que tava testando os botões.',
+    '{perdedor} saiu pra lavar um carro. {vencedor} ficou com a vitória.',
+  ];
+  let victoryBag = [], lastVictoryLine = null;
   const selection = [cards.indexOf($('pick-paulo')), cards.indexOf($('pick-natalino'))];
   const cursors = [...selection];
   let firstColumn = 0;
@@ -210,13 +243,27 @@
     $('result-status').textContent = winner === null ? 'EMPATE!' : `${playerName(winner)} VENCEU!`;
     $('result-quote').textContent = expelled ? `${playerName(loser)} ganhou um cartão vermelho e passagem só de ida pro vestiário.`
       : winner === null ? 'Tanto amansa-boi e ninguém conseguiu amansar ninguém.'
-        : `Parece que ${playerName(loser)} não aguentou o amansa-boi de ${playerName(winner)}!`;
+        : randomVictoryLine(winner, loser);
     resultScreen.dataset.winner = winner === null ? 'draw' : winner === 0 ? 'blue' : 'orange';
     resultScreen.dataset.card = expelled ? 'red' : '';
     overlay.hidden = true;
     resultScreen.hidden = false;
     audio?.play('finish');
     audio?.setInPlay(false);
+  }
+
+  function randomVictoryLine(winner, loser) {
+    if (!victoryBag.length) {
+      victoryBag = [...victoryLines];
+      for (let i = victoryBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [victoryBag[i], victoryBag[j]] = [victoryBag[j], victoryBag[i]];
+      }
+      const end = victoryBag.length - 1;
+      if (victoryBag[end] === lastVictoryLine) [victoryBag[0], victoryBag[end]] = [victoryBag[end], victoryBag[0]];
+    }
+    lastVictoryLine = victoryBag.pop();
+    return lastVictoryLine.replace('{vencedor}', playerName(winner)).replace('{perdedor}', playerName(loser));
   }
 
   function openRematchRoster() {
