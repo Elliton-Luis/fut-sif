@@ -127,6 +127,23 @@
             <button class="play" id="play" type="button">JOGAR AGORA <span aria-hidden="true">▶</span></button>
           </div>
         </div>
+        <section class="result-screen" id="result-screen" aria-labelledby="result-title" hidden>
+          <div class="result-burst" aria-hidden="true"></div>
+          <h2 id="result-title" class="result-title">FIM</h2>
+          <div class="result-content">
+            <div id="result-status" class="result-status" role="status"></div>
+            <div class="result-scoreboard" aria-label="Placar final">
+              <div class="result-team blue"><strong id="result-blue-name"></strong><b id="result-blue-score">0</b></div>
+              <span aria-hidden="true">×</span>
+              <div class="result-team orange"><strong id="result-orange-name"></strong><b id="result-orange-score">0</b></div>
+            </div>
+            <p id="result-quote" class="result-quote"></p>
+            <div class="result-actions">
+              <button class="play" id="result-replay" type="button">REVANCHE <kbd>Enter</kbd></button>
+              <button class="utility" id="result-roster" type="button">TROCAR CRAQUES <kbd>R</kbd></button>
+            </div>
+          </div>
+        </section>
       </div>
       <div class="gamebar"><div class="game-actions">
         <button id="pause" class="utility" type="button" disabled><span aria-hidden="true">Ⅱ</span> <span id="pause-label">PAUSAR</span> <kbd>P</kbd></button>

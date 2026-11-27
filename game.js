@@ -54,6 +54,7 @@
   const specials = [$('blue-special'), $('orange-special')];
   const combos = ['blue', 'orange'].map(team => ({ root: $(`${team}-combo`), bar: $(`${team}-combo-bar`), label: $(`${team}-combo-value`) }));
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
+  const resultScreen = $('result-screen'), resultReplay = $('result-replay'), resultRoster = $('result-roster');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
   const keeperAlerts = [$('blue-keeper'), $('orange-keeper')];
@@ -138,6 +139,7 @@
 
   function start() {
     stopPreview();
+    resultScreen.hidden = true;
     applyLineup();
     pitch.classList.remove('is-selecting');
     audio?.unlock();
@@ -199,15 +201,28 @@
     pause.disabled = true;
     period.textContent = 'FIM DE JOGO';
     announcement.textContent = '';
-    if (expelled) {
-      menu('CARTÃO VERMELHO', `${playerName(expelled.i)} foi expulso. ${playerName(1 - expelled.i)} venceu.`,
-        'JOGAR DE NOVO', 'SEGUNDO AMARELO', true, 'red');
-    } else {
-      menu(score[0] === score[1] ? 'EMPATE!' : `${playerName(score[0] > score[1] ? 0 : 1)} VENCEU!`,
-        `Placar final: ${score[0]} × ${score[1]}. Escolha o craque para a revanche.`, 'JOGAR DE NOVO', '●  APITO FINAL', true);
+    const winner = expelled ? 1 - expelled.i : score[0] === score[1] ? null : Number(score[1] > score[0]);
+    const loser = winner === null ? null : 1 - winner;
+    for (const [side, team] of ['blue', 'orange'].entries()) {
+      $(`result-${team}-name`).textContent = names[lineup[side]];
+      $(`result-${team}-score`).textContent = score[side];
     }
+    $('result-status').textContent = winner === null ? 'EMPATE!' : `${playerName(winner)} VENCEU!`;
+    $('result-quote').textContent = expelled ? `${playerName(loser)} ganhou um cartão vermelho e passagem só de ida pro vestiário.`
+      : winner === null ? 'Tanto amansa-boi e ninguém conseguiu amansar ninguém.'
+        : `Parece que ${playerName(loser)} não aguentou o amansa-boi de ${playerName(winner)}!`;
+    resultScreen.dataset.winner = winner === null ? 'draw' : winner === 0 ? 'blue' : 'orange';
+    resultScreen.dataset.card = expelled ? 'red' : '';
+    overlay.hidden = true;
+    resultScreen.hidden = false;
     audio?.play('finish');
     audio?.setInPlay(false);
+  }
+
+  function openRematchRoster() {
+    resultScreen.hidden = true;
+    menu('ESCOLHA SEU CRAQUE', 'Mude a escalação para a revanche.', 'JOGAR DE NOVO', '●  REVANCHE', true);
+    picker.focus({ preventScroll: true });
   }
 
   function burst(x, y, color, count, speed) {
@@ -1013,6 +1028,8 @@
   }
 
   play.addEventListener('click', () => phase === 'paused' ? togglePause() : start());
+  resultReplay.addEventListener('click', start);
+  resultRoster.addEventListener('click', openRematchRoster);
   pause.addEventListener('click', () => togglePause());
   fullscreen.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', syncFullscreen);
@@ -1036,6 +1053,13 @@
       return;
     }
     if (key === 'Escape' && stage.classList.contains('is-expanded')) { expandArena(false); return; }
+    if (phase === 'end' && !resultScreen.hidden && key !== 'KeyQ') {
+      if (key === 'KeyR' || ((key === 'Enter' || key === 'NumpadEnter') && !e.target?.closest?.('button'))) {
+        e.preventDefault();
+        if (!e.repeat) key === 'KeyR' ? openRematchRoster() : start();
+      }
+      return;
+    }
     const selecting = phase === 'menu' || phase === 'end';
     if (key === 'KeyQ' || (selecting && key === 'KeyT')) {
       e.preventDefault();
