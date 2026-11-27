@@ -40,11 +40,11 @@
   let firstColumn = 0;
   let lineup = [...selection];
   const keys = [
-    ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyM', 'KeyN', 'KeyB', 'KeyV'],
+    ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyC', 'KeyV', 'KeyB', 'KeyN'],
     ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Digit1', 'Digit2', 'Digit3', 'Digit4'],
   ];
-  const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4', Numpad9: 'Digit9' };
-  const slapKeys = new Map([['KeyZ', 0], ['Digit9', 1]]);
+  const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4', Numpad5: 'Digit5' };
+  const slapKeys = new Map([['KeyM', 0], ['Digit5', 1]]);
   const selectionKeys = new Map(keys.flatMap((bindings, side) =>
     bindings.slice(0, 5).map((code, action) => [code, [side, action]])));
   const controls = new Set([...keys.flat(), ...slapKeys.keys(), 'KeyP']);
@@ -1027,7 +1027,7 @@
     }
     if (key === 'Escape' && stage.classList.contains('is-expanded')) { expandArena(false); return; }
     const selecting = phase === 'menu' || phase === 'end';
-    if (key === 'KeyQ' || (selecting && key === 'KeyC')) {
+    if (key === 'KeyQ' || (selecting && key === 'KeyT')) {
       e.preventDefault();
       if (!e.repeat) key === 'KeyQ' ? $('sound').click() : setCPU(!cpu);
       return;
