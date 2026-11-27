@@ -183,7 +183,7 @@
       $('pause-label').textContent = 'VOLTAR';
       period.textContent = foul ? 'FALTA' : 'PAUSADO';
       if (foul) {
-        menu('FALTA!', `${names[lineup[foul.i]]} recebeu amarelo. Aperte P ou Enter para continuar.`,
+        menu('FALTA!', `${playerName(foul.i)} recebeu amarelo. Aperte P ou Enter para continuar.`,
           'CONTINUAR', 'CARTÃO AMARELO', false, 'yellow');
       } else menu('PAUSA', 'Aperte P ou Enter para continuar.', 'CONTINUAR', '●  PARTIDA PAUSADA', false);
     }
@@ -200,10 +200,10 @@
     period.textContent = 'FIM DE JOGO';
     announcement.textContent = '';
     if (expelled) {
-      menu('CARTÃO VERMELHO', `${names[lineup[expelled.i]]} foi expulso. ${names[lineup[1 - expelled.i]]} venceu.`,
+      menu('CARTÃO VERMELHO', `${playerName(expelled.i)} foi expulso. ${playerName(1 - expelled.i)} venceu.`,
         'JOGAR DE NOVO', 'SEGUNDO AMARELO', true, 'red');
     } else {
-      menu(score[0] === score[1] ? 'EMPATE!' : `${names[lineup[score[0] > score[1] ? 0 : 1]]} VENCEU!`,
+      menu(score[0] === score[1] ? 'EMPATE!' : `${playerName(score[0] > score[1] ? 0 : 1)} VENCEU!`,
         `Placar final: ${score[0]} × ${score[1]}. Escolha o craque para a revanche.`, 'JOGAR DE NOVO', '●  APITO FINAL', true);
     }
     audio?.play('finish');
@@ -236,7 +236,7 @@
     clearCelebration();
     celebrating = sc[i].parentElement;
     celebrating.classList.add('is-celebrating');
-    announcement.textContent = `GOL DO ${names[lineup[i]]}!`;
+    announcement.textContent = `GOL DO ${playerName(i)}!`;
     announcement.style.color = colors[i];
     shake = 9;
     crowdEnergy = 1;
@@ -344,9 +344,9 @@
         p.keeperTicks = 0;
         p.keeperAnchor = null;
         alert.hidden = true;
-        playCall(`${names[lineup[p.i]]} foi afastado do gol`, p.color);
+        playCall(`${playerName(p.i)} foi afastado do gol`, p.color);
       } else if (p.keeperTicks >= keeperWarning) {
-        const text = `${names[lineup[p.i]]} acha que ele é goleiro · avance! ${Math.ceil(remaining / 60)} s`;
+        const text = `${playerName(p.i)} acha que ele é goleiro · avance! ${Math.ceil(remaining / 60)} s`;
         if (alert.textContent !== text) alert.textContent = text;
         alert.hidden = false;
       }
@@ -730,10 +730,12 @@
 
   function drawPlayer(p) {
     const character = lineup[p.i], portrait = portraits[character];
+    const inverted = p.i === 1 && mirrorMatch();
     const dir = p.i ? -1 : 1, hy = (headY(p) - p.y) / playerScale;
     const skin = p.i ? '#cb855e' : '#efad7e';
     const outline = '#19262b';
     oval(ctx, p.x, floor + 4, (39 - Math.min((floor - p.y) / 8, 14)) * playerScale, 8 * playerScale, '#14302885');
+    if (inverted) oval(ctx, p.x, floor + 4, 21, 3, '#ffa058b0');
     ctx.save();
     ctx.translate(p.x, p.y); ctx.scale(dir * playerScale, playerScale);
     ctx.lineJoin = ctx.lineCap = 'round';
@@ -760,6 +762,7 @@
       oval(ctx, hand, -53, 7, 5, skin);
     }
     ctx.save(); ctx.translate(0, hy);
+    ctx.filter = inverted ? 'invert(1)' : 'none';
     if (portrait.naturalWidth) {
       ctx.drawImage(portrait, -42, -45, 84, 84);
       ctx.restore(); ctx.restore();
@@ -875,23 +878,35 @@
     ctx.restore();
   }
 
+  function mirrorMatch() { return lineup[0] === lineup[1]; }
+
+  function playerName(side) {
+    const name = names[lineup[side]];
+    return mirrorMatch() ? `${name} (${side ? 'LARANJA' : 'AZUL'})` : name;
+  }
+
+  function updateOrangeLabel() {
+    $('orange-label').textContent = `${names[lineup[1]]}${mirrorMatch() ? ' · INV' : ''}${cpu ? ' · CPU' : ''}`;
+  }
+
   function applyLineup() {
     lineup = [...selection];
     const [blue, orange] = lineup.map(index => names[index]);
     $('blue-name').textContent = cards[lineup[0]].dataset.scoreName || blue;
     $('blue-label').textContent = blue;
     $('orange-name').textContent = cards[lineup[1]].dataset.scoreName || orange;
-    $('orange-label').textContent = cpu ? `${orange} · CPU` : orange;
-    canvas.setAttribute('aria-label', `${blue} de azul à esquerda e ${orange} de laranja à direita`);
+    updateOrangeLabel();
+    canvas.setAttribute('aria-label', `${blue} de azul à esquerda e ${orange} de laranja à direita${mirrorMatch() ? ', com retrato invertido' : ''}`);
   }
 
   function updatePicker() {
     cards.forEach((card, index) => {
-      const side = selection.indexOf(index);
-      card.classList.toggle('blue', side === 0);
-      card.classList.toggle('orange', side === 1);
-      card.classList.toggle('reserve', side === -1);
-      roles[index].textContent = side === -1 ? 'RESERVA' : side === 0 ? 'J1 · AZUL' : cpu ? 'CPU · LARANJA' : 'J2 · LARANJA';
+      const blue = selection[0] === index, orange = selection[1] === index;
+      card.classList.toggle('blue', blue);
+      card.classList.toggle('orange', orange);
+      card.classList.toggle('reserve', !blue && !orange);
+      card.classList.toggle('mirror-pick', blue && orange);
+      roles[index].textContent = blue && orange ? `J1 + ${cpu ? 'CPU' : 'J2'}` : blue ? 'J1 · AZUL' : orange ? (cpu ? 'CPU · LARANJA' : 'J2 · LARANJA') : 'RESERVA';
     });
     rosterSlots.forEach((slot, index) => {
       slot.classList.toggle('cursor-p1', index === cursors[0]);
@@ -948,11 +963,6 @@
     const next = nextColumn * rosterRows + nextRow;
     cursors[side] = next;
     if (next < cards.length && next !== selection[side]) {
-      const rival = 1 - side;
-      if (selection[rival] === next) {
-        selection[rival] = selection[side];
-        if (cursors[rival] === next) cursors[rival] = selection[rival];
-      }
       selection[side] = next;
       if (phase === 'menu') applyLineup();
       showCharacterQuote(next);
@@ -967,7 +977,7 @@
       $(id).classList.toggle('selected', selected);
       $(id).setAttribute('aria-pressed', String(selected));
     }
-    $('orange-label').textContent = `${names[lineup[1]]}${cpu ? ' · CPU' : ''}`;
+    updateOrangeLabel();
     $('orange-controls').classList.toggle('cpu', cpu);
     $('touch').lastElementChild.hidden = cpu;
     updatePicker();

@@ -136,6 +136,7 @@ html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavio
 .yellow-card{display:inline-block;width:.47em;height:.69em;margin-inline-start:.28em;border-radius:1px;background:#ffdf55;vertical-align:baseline}
 .play-call{width:max-content;max-width:calc(100% - 16px);text-align:center;white-space:normal}
 .keeper-alerts{position:absolute;inset:auto 8px 4%;display:flex;justify-content:space-between;gap:5px;pointer-events:none}.keeper-alert{flex:0 1 auto;max-width:49%;padding:.36em .55em;border:1px solid var(--team);border-radius:6px;background:#14231ef5;color:var(--team);font:800 clamp(9px,1.2vw,14px)/1.25 var(--mono)}.keeper-alert.orange{margin-left:auto;text-align:right}
+.character-picker .character.mirror-pick{border-color:var(--orange) var(--orange) var(--blue) var(--blue)}.character.mirror-pick .character-role{color:#f6f5ed}
 .menu[data-card=yellow] #menu-title,.menu[data-card=yellow] #menu-kicker{color:#ffdf55}
 .menu[data-card=yellow]{border-color:#ad8b37}
 .menu[data-card=red] #menu-title,.menu[data-card=red] #menu-kicker{color:#ff9488}
