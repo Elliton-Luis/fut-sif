@@ -346,6 +346,7 @@
     overlay.hidden = true;
     resultScreen.hidden = true;
     bracketScreen.hidden = false;
+    pitch.classList.remove('is-selecting');
     pitch.classList.add('is-bracket');
     syncResultButtons();
     syncTouchVisibility();

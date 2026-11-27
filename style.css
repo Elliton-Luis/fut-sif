@@ -103,21 +103,23 @@ html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavio
 }
 @media(max-height:350px){.stage:is(:fullscreen,.is-expanded) .touch button{min-height:32px}}
 
-/* The roster is the whole fullscreen view until kickoff. */
-.selection-menu{width:min(1060px,calc(100% - 24px));padding:clamp(10px,1.9vw,24px)}
-.selection-menu h2{font-size:clamp(24px,4.9vw,64px);line-height:1.02}
-.selection-menu #menu-description{font-size:clamp(12px,1.55vw,17px)}
-.selection-menu .roster-window,.selection-menu .keyboard-guide{font-size:clamp(10px,1.32vw,15px)}
+/* The roster fits inside normal desktop viewports and expands in fullscreen. */
+.selection-menu{width:min(1060px,calc(100% - 20px));padding:clamp(8px,1.4dvh,16px) clamp(10px,1.8vw,22px)}
+.selection-menu h2{font-size:clamp(22px,min(4.2vw,5.2dvh),48px);line-height:1.02}
+.selection-menu #menu-description{font-size:clamp(11px,1.25vw,14px);margin:3px 0 6px}
+.selection-menu .roster-window,.selection-menu .keyboard-guide{font-size:clamp(9px,1.1vw,12px)}
+.selection-menu .keyboard-guide{margin:4px 0 6px}
 .selection-menu .keyboard-guide kbd{font-size:inherit}
-.selection-menu .character strong{font-size:clamp(10px,1.48vw,19px)}
-.selection-menu .character-role{font-size:clamp(8px,1.17vw,13px)}
-.selection-menu .character img{width:min(100%,132px);height:clamp(39px,9vw,132px)}
-.selection-menu .character q{font-size:clamp(11px,1.15vw,15px)}
-.selection-menu .modes button,.selection-menu .play{font-size:clamp(12px,1.45vw,18px)}
-.selection-menu .play{padding-block:clamp(9px,1.25vw,15px)}
+.selection-menu .character strong{font-size:clamp(10px,min(1.25vw,1.9dvh),15px)}
+.selection-menu .character-role{font-size:clamp(8px,1vw,11px)}
+.selection-menu .character img{width:min(100%,86px);height:clamp(38px,min(6.8vw,10.2dvh),86px)}
+.selection-menu .character q{font-size:clamp(10px,1vw,12px);min-height:2em}
+.selection-menu .modes{margin-bottom:6px}
+.selection-menu .modes button,.selection-menu .play{font-size:clamp(11px,1.25vw,15px)}
+.selection-menu .play{padding-block:clamp(7px,1.1dvh,11px)}
 
-.stage:is(:fullscreen,.is-expanded) .game:has(.pitch.is-selecting){grid-template-rows:minmax(0,1fr)}
-.stage:is(:fullscreen,.is-expanded) .game:has(.pitch.is-selecting) > :is(.scoreboard,.combo-board){display:none}
+.stage:is(:fullscreen,.is-expanded) .game:has(:is(.pitch.is-selecting,.pitch.is-bracket)){grid-template-rows:minmax(0,1fr)}
+.stage:is(:fullscreen,.is-expanded) .game:has(:is(.pitch.is-selecting,.pitch.is-bracket)) > :is(.scoreboard,.combo-board){display:none}
 .stage:is(:fullscreen,.is-expanded) .pitch.is-selecting .overlay{display:block;padding:0}
 .stage:is(:fullscreen,.is-expanded) .selection-menu{display:flex;flex-direction:column;gap:clamp(4px,1.05dvh,14px);width:100%;height:100%;min-width:0;padding-block:clamp(9px,2dvh,24px);padding-inline:max(clamp(8px,3vw,64px),calc((100% - 1580px)/2));border:0;border-radius:0;background:radial-gradient(ellipse at 50% 36%,#253d33,#101c1c 72%);box-shadow:none}
 .stage:is(:fullscreen,.is-expanded) .selection-menu h2{font-size:clamp(25px,min(6vw,8dvh),88px)}
@@ -189,9 +191,9 @@ html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavio
 .modes{display:flex;flex-wrap:wrap;justify-content:center}
 .modes button{flex:1 1 auto}
 .pitch.is-bracket canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
-.pitch.is-bracket .bracket-screen{position:relative;min-height:440px}
+.pitch.is-bracket .bracket-screen{position:relative;min-height:clamp(360px,56dvh,440px)}
 .stage:is(:fullscreen,.is-expanded) .pitch.is-bracket .bracket-screen{position:absolute;inset:0;min-height:0}
-.bracket-screen{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(6px,1.3vw,14px);background:radial-gradient(ellipse at 50% 30%,#21392ff5,#0c1415fa 75%);overflow:auto}
+.bracket-screen{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:safe center;padding:clamp(6px,1.2vw,14px);background:radial-gradient(ellipse at 50% 30%,#21392ff5,#0c1415fa 75%);overflow:auto}
 .bracket-panel{width:100%;max-width:1180px;display:flex;flex-direction:column;gap:clamp(4px,1vh,8px);text-align:center}
 .bracket-kicker{margin:0;color:var(--lime);font:800 clamp(9px,.95vw,11px) var(--mono);letter-spacing:.12em}
 .bracket-title{margin:0;font:clamp(20px,3.4vw,40px)/1 var(--display);letter-spacing:.06em;color:var(--lime);text-shadow:2px 3px #0b1210}
