@@ -116,7 +116,7 @@
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, mode = 'local', sound = true, freeze = 0, shake = 0;
-  const tournament = { active: false, user: 0, round: 0, bracket: [], champion: null, eliminated: false, previousSelection: null };
+  const tournament = { active: false, user: 0, round: 0, rounds: [], stats: new Map(), eliminated: false, finished: false, exitRound: -1, view: 'bracket', previousSelection: null };
   let sparks = [], trail = [], trailTick = 0;
   let aim = null;
   let callTime = 0, crowdEnergy = 0, sceneTime = 0, netCooldown = 0;
@@ -184,117 +184,141 @@
     return result;
   }
 
-  function tournamentRoundLabel(index, total) {
-    if (index === total - 1) return 'FINAL';
-    return total === 2 || index === total - 2 ? 'SEMIFINAL' : 'QUARTAS';
+  // ---------- Mata-mata: chave de 16 (oitavas → quartas → semifinal → final) ----------
+  const roundLabels = ['OITAVAS', 'QUARTAS', 'SEMIFINAL', 'FINAL'];
+  const roundPhrases = ['nas oitavas', 'nas quartas', 'na semifinal', 'na final'];
+  const BYE = -1;
+  const trophySVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#ffde64" stroke="#7a5d14" stroke-width="2" stroke-linejoin="round" d="M14 6h20v8c0 8-4 14-10 15-6-1-10-7-10-15z"/><path fill="none" stroke="#ffde64" stroke-width="3" d="M14 10H7c0 7 3 11 8 12M34 10h7c0 7-3 11-8 12"/><path fill="#e8bb3c" stroke="#7a5d14" stroke-width="2" d="M21 29h6v6h-6z"/><path fill="#ffde64" stroke="#7a5d14" stroke-width="2" stroke-linejoin="round" d="M15 41c0-4 4-6 9-6s9 2 9 6z"/><path fill="#fff6c9" opacity=".7" d="M18 9h3v9c0 3 1 6 2 8-3-1-5-5-5-9z"/></svg>';
+
+  function slotName(index) { return index === BYE ? 'W.O.' : index === null ? 'A DEFINIR' : names[index]; }
+  function makeMatch(a = null, b = null) { return { a, b, score: null, pens: null, winner: null, done: false, wo: false }; }
+  function isUserMatch(match) { return match.a === tournament.user || match.b === tournament.user; }
+  function opponentOf(match) { return match.a === tournament.user ? match.b : match.a; }
+  function currentMatch() { return tournament.rounds[tournament.round]?.find(isUserMatch) ?? null; }
+  function championOf() { return tournament.rounds.at(-1)?.[0].winner ?? null; }
+
+  function statsOf(index) {
+    if (!tournament.stats.has(index)) tournament.stats.set(index, { gf: 0, ga: 0, wins: 0, played: 0, best: 0 });
+    return tournament.stats.get(index);
   }
 
-  function simulateMatch(a, b, level = 1) {
-    const score = [Math.floor(Math.random() * 3), Math.floor(Math.random() * 3)];
-    if (score[0] === score[1]) {
-      const pens = [3 + Math.floor(Math.random() * (3 + level)), 3 + Math.floor(Math.random() * (3 + level))];
-      const winner = pens[0] === pens[1] ? (Math.random() < .5 ? a : b) : (pens[0] > pens[1] ? a : b);
-      return { winner, score, pens };
+  function shootout() {
+    let a = 0, b = 0;
+    for (let kick = 0; kick < 5; kick++) { a += Math.random() < .75; b += Math.random() < .75; }
+    while (a === b) { a += Math.random() < .75; b += Math.random() < .75; }
+    return [a, b];
+  }
+
+  function randomGoals() {
+    const r = Math.random();
+    return r < .2 ? 0 : r < .47 ? 1 : r < .72 ? 2 : r < .89 ? 3 : r < .97 ? 4 : 5;
+  }
+
+  function closeMatch(match, roundIndex, score, pens, winner) {
+    Object.assign(match, { score, pens, winner, done: true });
+    [match.a, match.b].forEach((index, side) => {
+      const stats = statsOf(index);
+      stats.played++;
+      stats.gf += score[side];
+      stats.ga += score[1 - side];
+      stats.best = Math.max(stats.best, roundIndex + (winner === index ? 1 : 0));
+      if (winner === index) stats.wins++;
+    });
+  }
+
+  // Partidas sem o jogador são "sorteadas": placar aleatório e pênaltis se empatar.
+  function simulateMatch(match, roundIndex) {
+    if (match.done) return;
+    if (match.a === BYE || match.b === BYE) {
+      const winner = match.a === BYE ? match.b : match.a;
+      Object.assign(match, { winner, done: true, wo: true });
+      statsOf(winner).best = Math.max(statsOf(winner).best, roundIndex + 1);
+      return;
     }
-    return { winner: score[0] > score[1] ? a : b, score, pens: null };
+    const score = [randomGoals(), randomGoals()];
+    const pens = score[0] === score[1] ? shootout() : null;
+    const decider = pens ?? score;
+    closeMatch(match, roundIndex, score, pens, decider[0] > decider[1] ? match.a : match.b);
   }
 
-  function makeRound(pairs, user) {
-    return pairs.map(([a, b]) => ({ a, b, user: a === user || b === user, winner: null, score: null, pens: null, done: false }));
+  function buildTournament(user) {
+    const field = shuffle(cards.map((_, index) => index).filter(index => index !== user)).slice(0, 15);
+    const byes = Math.min(8, 15 - field.length);
+    const lucky = field.slice(0, byes);
+    const rest = shuffle([user, ...field.slice(byes)]);
+    const pairs = lucky.map(index => [index, BYE]);
+    for (let i = 0; i < rest.length; i += 2) pairs.push(Math.random() < .5 ? [rest[i], rest[i + 1]] : [rest[i + 1], rest[i]]);
+    tournament.rounds = [shuffle(pairs).map(([a, b]) => makeMatch(a, b)),
+      ...[4, 2, 1].map(size => Array.from({ length: size }, () => makeMatch()))];
+    tournament.rounds[0].forEach(match => { if (match.b === BYE) simulateMatch(match, 0); });
   }
 
-  function buildTournamentBracket(user) {
-    const pool = shuffle(cards.map((_, index) => index).filter(index => index !== user));
-    const size = pool.length >= 7 ? 8 : 4;
-    const participants = shuffle([user, ...pool.slice(0, size - 1)]);
-    const bracket = [];
-    let roundSize = participants.length;
-    let remaining = participants;
-    while (roundSize > 1) {
-      const pairs = [];
-      for (let i = 0; i < roundSize; i += 2) pairs.push([remaining[i], remaining[i + 1]]);
-      bracket.push(makeRound(pairs, user));
-      remaining = new Array(roundSize / 2).fill(null);
-      roundSize /= 2;
+  // Fecha a rodada atual (sorteia o resto) e leva os vencedores para a próxima fase.
+  function completeRound() {
+    const index = tournament.round;
+    tournament.rounds[index].forEach(match => simulateMatch(match, index));
+    const next = tournament.rounds[index + 1];
+    if (!next) { tournament.finished = true; return; }
+    next.forEach((match, i) => {
+      match.a = tournament.rounds[index][i * 2].winner;
+      match.b = tournament.rounds[index][i * 2 + 1].winner;
+    });
+    tournament.round++;
+  }
+
+  function recordUserMatch(userGoals, rivalGoals, forcedWinner) {
+    const match = currentMatch();
+    if (!match || match.done) return null;
+    const userIsA = match.a === tournament.user;
+    const score = userIsA ? [userGoals, rivalGoals] : [rivalGoals, userGoals];
+    let pens = null, userPens = null, userWon;
+    if (forcedWinner !== null) userWon = forcedWinner === 0;
+    else if (userGoals !== rivalGoals) userWon = userGoals > rivalGoals;
+    else {
+      userPens = shootout();
+      pens = userIsA ? userPens : [userPens[1], userPens[0]];
+      userWon = userPens[0] > userPens[1];
     }
-    return bracket;
-  }
-
-  function currentTournamentMatch() {
-    return tournament.bracket[tournament.round]?.find(match => match.user) ?? null;
-  }
-
-  function simulateNPCRound(index) {
-    for (const match of tournament.bracket[index] ?? []) {
-      if (match.user) continue;
-      Object.assign(match, simulateMatch(match.a, match.b, index + 1));
-      match.done = true;
-    }
+    closeMatch(match, tournament.round, score, pens, userWon ? tournament.user : opponentOf(match));
+    if (!userWon) { tournament.eliminated = true; tournament.exitRound = tournament.round; }
+    completeRound();
+    return { userWon, userPens };
   }
 
   function startTournament() {
-    tournament.active = true;
-    tournament.previousSelection = [...selection];
-    tournament.user = lineup[0];
-    tournament.round = 0;
-    tournament.bracket = buildTournamentBracket(tournament.user);
-    tournament.champion = null;
-    tournament.eliminated = false;
-    simulateNPCRound(0);
+    if (!tournament.active) tournament.previousSelection = [...selection];
+    Object.assign(tournament, { active: true, user: selection[0], round: 0, stats: new Map(),
+      eliminated: false, finished: false, exitRound: -1, view: 'bracket' });
+    buildTournament(tournament.user);
     cpu = true;
-    mode = 'tournament';
-    syncModeButtons();
-    updateOrangeLabel();
     $('orange-controls').classList.add('cpu');
-    updatePicker();
     showTournamentScreen();
   }
 
   function advanceTournament() {
     if (!tournament.active) return;
-    if (tournament.eliminated || tournament.champion) {
-      startTournament();
+    if (tournament.view === 'podium') { startTournament(); return; }
+    if (tournament.finished) { showPodium(); return; }
+    if (tournament.eliminated) {
+      while (!tournament.finished) completeRound();
+      showTournamentScreen();
       return;
     }
-    const current = currentTournamentMatch();
-    if (current && !current.done) {
-      bracketScreen.hidden = true;
-      start();
-      return;
-    }
-    const winners = tournament.bracket[tournament.round].map(match => match.winner);
-    tournament.round += 1;
-    const round = tournament.bracket[tournament.round];
-    round.length = 0;
-    const pairs = winners.reduce((grouped, winner, index) => {
-      if (index % 2 === 0) grouped.push([winner]);
-      else grouped[grouped.length - 1].push(winner);
-      return grouped;
-    }, []);
-    round.push(...makeRound(pairs, tournament.user));
-    simulateNPCRound(tournament.round);
-    bracketScreen.hidden = true;
     start();
   }
 
   function exitTournament() {
     tournament.active = false;
-    if (tournament.previousSelection) {
-      selection.splice(0, 2, ...tournament.previousSelection);
-      tournament.previousSelection = null;
-    }
-    tournament.bracket = [];
-    tournament.champion = null;
-    tournament.eliminated = false;
+    tournament.view = 'bracket';
+    if (tournament.previousSelection) selection.splice(0, 2, ...tournament.previousSelection);
+    tournament.previousSelection = null;
     bracketScreen.hidden = true;
-    cpu = true;
-    mode = 'cpu';
-    syncModeButtons();
-    updateOrangeLabel();
-    $('orange-controls').classList.add('cpu');
+    resultScreen.hidden = true;
+    pitch.classList.remove('is-bracket');
+    phase = 'menu';
     applyLineup();
     updatePicker();
-    menu('ESCOLHA SEU CRAQUE', 'Mude a escalação para a revanche.', 'JOGAR AGORA', '●  MODO ARCADE', true);
+    menu('ESCOLHA SEU CRAQUE', 'Escolha seu craque e encare o mata-mata.', 'COMEÇAR MATA-MATA', '●  MATA-MATA', true);
   }
 
   function syncModeButtons() {
@@ -309,63 +333,166 @@
     resultRoster.firstChild.textContent = tournament.active ? 'SAIR DO TORNEIO ' : 'TROCAR CRAQUES ';
   }
 
-  function showTournamentScreen() {
+  function enterTournamentPhase() {
     phase = 'tournament';
     pause.disabled = true;
-    period.textContent = 'MATA MATA';
+    period.textContent = 'MATA-MATA';
     announcement.textContent = '';
     clearCall();
     clearCelebration();
     clearInput();
+    setUrgent(false);
+    audio?.setInPlay(false);
     overlay.hidden = true;
     resultScreen.hidden = true;
     bracketScreen.hidden = false;
+    pitch.classList.add('is-bracket');
     syncResultButtons();
-    renderBracket();
-    const status = tournament.champion
-      ? `${playerName(tournament.champion)} é o campeão do mata-mata!`
-      : tournament.eliminated
-        ? `${playerName(tournament.user)} caiu na ${tournamentRoundLabel(tournament.round, tournament.bracket.length).toLowerCase()}.`
-        : `Rodada atual: ${tournamentRoundLabel(tournament.round, tournament.bracket.length)}.`;
-    $('bracket-status').textContent = status;
-    const pending = currentTournamentMatch();
-    bracketNext.firstChild.textContent = tournament.eliminated || tournament.champion ? 'NOVO TORNEIO '
-      : pending && !pending.done ? 'JOGAR PARTIDA ' : 'PRÓXIMA PARTIDA ';
     syncTouchVisibility();
   }
 
-  function renderBracket() {
-    const container = $('bracket-rounds');
-    container.replaceChildren();
-    tournament.bracket.forEach((round, roundIndex) => {
-      const column = document.createElement('div');
-      column.className = 'bracket-round';
-      const heading = document.createElement('h3');
-      heading.textContent = tournamentRoundLabel(roundIndex, tournament.bracket.length);
-      column.append(heading);
-      for (const match of round) {
-        const card = document.createElement('div');
-        card.className = `bracket-match${match.user ? ' is-user' : ''}${match.done ? ' is-done' : ''}`;
-        for (const [side, index] of [[0, match.a], [1, match.b]]) {
-          const row = document.createElement('div');
-          row.className = `bracket-player${match.done && index !== null && match.winner === index ? ' is-winner' : ''}`;
-          const name = document.createElement('span');
-          name.textContent = index === null ? 'A DEFINIR' : names[index];
-          const score = document.createElement('b');
-          score.textContent = match.done ? String(match.score[side]) : '–';
-          row.append(name, score);
-          card.append(row);
-        }
-        if (match.pens) {
-          const pens = document.createElement('small');
-          pens.className = 'bracket-pens';
-          pens.textContent = `PÊNALTIS ${match.pens[0]}×${match.pens[1]}`;
-          card.append(pens);
-        }
-        column.append(card);
-      }
-      container.append(column);
+  function showTournamentScreen() {
+    enterTournamentPhase();
+    tournament.view = 'bracket';
+    $('bracket-scroll').hidden = false;
+    $('podium').hidden = true;
+    renderBracket();
+    const user = names[tournament.user];
+    let status, action;
+    if (tournament.finished) {
+      status = `${names[championOf()]} levantou a taça!`;
+      action = 'VER PÓDIO';
+    } else if (tournament.eliminated) {
+      status = `${user} caiu ${roundPhrases[tournament.exitRound]}. Veja quem leva a taça!`;
+      action = 'SIMULAR ATÉ A FINAL';
+    } else {
+      const label = roundLabels[tournament.round];
+      status = `${label}: ${user} × ${names[opponentOf(currentMatch())]}`;
+      action = `JOGAR ${label}`;
+    }
+    $('bracket-kicker').textContent = '●  MATA-MATA · 16 CRAQUES';
+    $('bracket-title').textContent = tournament.finished ? 'TEMOS UM CAMPEÃO!' : 'CHAVE DO TORNEIO';
+    $('bracket-status').textContent = status;
+    bracketNext.firstChild.textContent = `${action} `;
+    bracketExit.firstChild.textContent = 'SAIR DO TORNEIO ';
+  }
+
+  function portraitNode(index) {
+    if (index === null || index === BYE) return document.createElement('i');
+    const img = document.createElement('img');
+    img.src = portraits[index].getAttribute('src');
+    img.alt = '';
+    return img;
+  }
+
+  function bracketCard(match) {
+    const card = document.createElement('div');
+    const mine = isUserMatch(match);
+    const next = mine && !match.done && !tournament.eliminated;
+    card.className = `bracket-match${mine ? ' is-user' : ''}${next ? ' is-next' : ''}${match.done ? ' is-done' : ''}`;
+    [match.a, match.b].forEach((index, side) => {
+      const row = document.createElement('div');
+      const won = match.done && match.winner === index;
+      row.className = `bracket-player${won ? ' is-winner' : match.done ? ' is-loser' : ''}`
+        + `${index === tournament.user ? ' is-you' : ''}${index === BYE || index === null ? ' is-empty' : ''}`;
+      const name = document.createElement('span');
+      name.textContent = slotName(index);
+      const goals = document.createElement('b');
+      if (match.wo) goals.textContent = won ? '✓' : '';
+      else if (match.done) goals.textContent = `${match.score[side]}${match.pens ? ` (${match.pens[side]})` : ''}`;
+      row.append(portraitNode(index), name, goals);
+      card.append(row);
     });
+    return card;
+  }
+
+  function renderBracket() {
+    const last = tournament.rounds.length - 1;
+    const column = (roundIndex, matches, side) => {
+      const col = document.createElement('div');
+      const current = roundIndex === tournament.round && !tournament.finished;
+      col.className = `bracket-round side-${side}${current ? ' is-current' : ''}`;
+      const heading = document.createElement('h3');
+      heading.textContent = roundLabels[roundIndex];
+      const list = document.createElement('div');
+      list.className = 'bracket-list';
+      matches.forEach(match => list.append(bracketCard(match)));
+      col.append(heading, list);
+      return col;
+    };
+    const columns = [];
+    for (let r = 0; r < last; r++) {
+      const round = tournament.rounds[r];
+      columns.push(column(r, round.slice(0, round.length / 2), 'left'));
+    }
+    const final = column(last, tournament.rounds[last], 'final');
+    const trophy = document.createElement('div');
+    trophy.className = 'bracket-trophy';
+    trophy.innerHTML = trophySVG;
+    const champ = document.createElement('span');
+    champ.textContent = tournament.finished ? `CAMPEÃO: ${names[championOf()]}` : 'TAÇA DO QUINTAL';
+    trophy.append(champ);
+    final.querySelector('.bracket-list').prepend(trophy);
+    columns.push(final);
+    for (let r = last - 1; r >= 0; r--) {
+      const round = tournament.rounds[r];
+      columns.push(column(r, round.slice(round.length / 2), 'right'));
+    }
+    $('bracket-rounds').replaceChildren(...columns);
+  }
+
+  function showPodium() {
+    enterTournamentPhase();
+    tournament.view = 'podium';
+    $('bracket-scroll').hidden = true;
+    $('podium').hidden = false;
+    const final = tournament.rounds.at(-1)[0];
+    const champion = final.winner, runnerUp = final.a === champion ? final.b : final.a;
+    const balance = index => { const s = statsOf(index); return [s.gf - s.ga, s.gf]; };
+    const [third] = tournament.rounds.at(-2).map(match => (match.winner === match.a ? match.b : match.a))
+      .sort((x, y) => { const [a1, a2] = balance(x), [b1, b2] = balance(y); return b1 - a1 || b2 - a2; });
+    const spots = [[runnerUp, 2], [champion, 1], [third, 3]].map(([index, place]) => {
+      const stats = statsOf(index);
+      const spot = document.createElement('div');
+      spot.className = `podium-spot place-${place}${index === tournament.user ? ' is-you' : ''}`;
+      const name = document.createElement('strong');
+      name.textContent = names[index];
+      const info = document.createElement('small');
+      info.textContent = `${stats.gf} GOLS · ${stats.ga} SOFRIDOS`;
+      const step = document.createElement('div');
+      step.className = 'podium-step';
+      step.textContent = `${place}º`;
+      spot.append(portraitNode(index), name, info, step);
+      return spot;
+    });
+    $('podium-stage').replaceChildren(...spots);
+
+    const ranking = [...tournament.stats.entries()].filter(([, s]) => s.played)
+      .sort(([, a], [, b]) => b.gf - a.gf || (b.gf - b.ga) - (a.gf - a.ga) || b.best - a.best).slice(0, 5);
+    $('podium-scorers').replaceChildren(...ranking.map(([index, s]) => {
+      const item = document.createElement('li');
+      if (index === tournament.user) item.className = 'is-you';
+      const name = document.createElement('span');
+      name.textContent = names[index];
+      const goals = document.createElement('b');
+      goals.textContent = `${s.gf} ${s.gf === 1 ? 'GOL' : 'GOLS'}`;
+      item.append(name, goals);
+      return item;
+    }));
+
+    const mine = statsOf(tournament.user);
+    const campaign = champion === tournament.user ? 'CAMPEÃO 🏆'
+      : runnerUp === tournament.user ? 'vice-campeão'
+        : third === tournament.user ? '3º lugar' : `caiu ${roundPhrases[tournament.exitRound]}`;
+    $('podium-campaign').textContent = `Sua campanha com ${names[tournament.user]}: ${campaign} · ${mine.wins} `
+      + `${mine.wins === 1 ? 'vitória' : 'vitórias'} · ${mine.gf} gols marcados · ${mine.ga} sofridos`;
+    $('bracket-kicker').textContent = '●  MATA-MATA · RESULTADO FINAL';
+    $('bracket-title').textContent = 'PÓDIO';
+    $('bracket-status').textContent = champion === tournament.user
+      ? `${names[champion]} é o grande campeão!` : `${names[champion]} é o campeão do mata-mata!`;
+    bracketNext.firstChild.textContent = 'NOVO TORNEIO ';
+    bracketExit.firstChild.textContent = 'VOLTAR AO MENU ';
+    audio?.play(champion === tournament.user ? 'goal' : 'finish');
   }
 
   function menu(title, description, button, kicker, modes, card = '') {
@@ -397,17 +524,17 @@
     stopPreview();
     resultScreen.hidden = true;
     bracketScreen.hidden = true;
+    pitch.classList.remove('is-bracket');
     if (tournament.active) {
-      const match = currentTournamentMatch();
-      if (match) {
-        lineup[1] = match.a === tournament.user ? match.b : match.a;
-        selection[1] = lineup[1];
-      }
+      const match = currentMatch();
+      if (!match || match.done) { showTournamentScreen(); return; }
+      selection[0] = tournament.user;
+      selection[1] = opponentOf(match);
     }
     applyLineup();
     const style = playStyles[cards[lineup[1]].id.replace('pick-', '')] ?? null;
     players.forEach(p => { p.aiStyle = null; p.aiLevel = 1; p.speedScale = 1; p.jumpScale = 1; });
-    if (cpu && mode === 'tournament' && style) {
+    if (tournament.active && style) {
       players[1].aiStyle = style;
       players[1].aiLevel = tournament.round + 1;
       players[1].speedScale = style.speed;
@@ -442,7 +569,7 @@
   }
 
   function togglePause(foul = null) {
-    if (phase === 'menu' || phase === 'end') return;
+    if (phase === 'menu' || phase === 'end' || phase === 'tournament') return;
     clearInput();
     if (phase === 'paused') {
       phase = resumedPhase;
@@ -478,22 +605,12 @@
     const winner = expelled ? 1 - expelled.i : score[0] === score[1] ? null : Number(score[1] > score[0]);
     const loser = winner === null ? null : 1 - winner;
     let matchWinner = winner;
-    let penaltyWinner = false;
+    let penalties = null;
     if (tournament.active) {
-      const match = currentTournamentMatch();
-      if (match) {
-        if (winner === null) {
-          const pens = [3 + Math.floor(Math.random() * 4), 3 + Math.floor(Math.random() * 4)];
-          match.pens = pens;
-          matchWinner = pens[0] === pens[1] ? (Math.random() < .5 ? 0 : 1) : Number(pens[1] > pens[0]);
-          penaltyWinner = true;
-        }
-        const opponent = match.a === tournament.user ? match.b : match.a;
-        match.winner = matchWinner === 0 ? tournament.user : opponent;
-        match.score = [...score];
-        match.done = true;
-        tournament.eliminated = matchWinner !== 0;
-        if (!tournament.eliminated && tournament.round === tournament.bracket.length - 1) tournament.champion = tournament.user;
+      const outcome = recordUserMatch(score[0], score[1], expelled ? winner : null);
+      if (outcome) {
+        matchWinner = outcome.userWon ? 0 : 1;
+        penalties = outcome.userPens;
       }
     }
     for (const [side, team] of ['blue', 'orange'].entries()) {
@@ -501,7 +618,7 @@
       $(`result-${team}-score`).textContent = score[side];
     }
     $('result-status').textContent = matchWinner === null ? 'EMPATE!'
-      : penaltyWinner ? `${playerName(matchWinner)} VENCEU NOS PÊNALTIS!`
+      : penalties ? `${playerName(matchWinner)} VENCEU NOS PÊNALTIS (${penalties[0]}×${penalties[1]})!`
         : `${playerName(matchWinner)} VENCEU!`;
     $('result-quote').textContent = expelled ? `${playerName(loser)} ganhou um cartão vermelho e passagem só de ida pro vestiário.`
       : matchWinner === null ? 'Tanto amansa-boi e ninguém conseguiu amansar ninguém.'
@@ -915,7 +1032,7 @@
   }
 
   function update(dt) {
-    if (phase === 'paused' || phase === 'menu' || phase === 'end') return;
+    if (phase === 'paused' || phase === 'menu' || phase === 'end' || phase === 'tournament') return;
     sceneTime += dt;
     crowdEnergy = Math.max(0, crowdEnergy - dt * .011);
     netCooldown = Math.max(0, netCooldown - dt);
@@ -1337,13 +1454,22 @@
     if (touchKnob) touchKnob.style.transform = 'translate(-50%, -50%)';
   }
 
-  function setCPU(value) {
-    if (tournament.active || (touchDevice && !value)) {
+  function setCPU(value) { setMode(value ? 'cpu' : 'local'); }
+
+  function setMode(next) {
+    if (tournament.active) return;
+    if (touchDevice && next === 'local') {
       showModeNotice();
       return;
     }
-    cpu = value;
-    mode = value ? 'cpu' : 'local';
+    mode = next;
+    cpu = next !== 'local';
+    if (phase === 'menu' && !picker.hidden) {
+      play.firstChild.textContent = next === 'tournament' ? 'COMEÇAR MATA-MATA ' : 'JOGAR AGORA ';
+      $('menu-description').textContent = next === 'tournament'
+        ? 'Escolha seu craque (P1): 16 na chave, oitavas até a final.'
+        : 'Mova o cursor pelo teclado para escolher seu craque.';
+    }
     syncModeButtons();
     updateOrangeLabel();
     $('orange-controls').classList.toggle('cpu', cpu);
@@ -1380,7 +1506,11 @@
     }
   }
 
-  play.addEventListener('click', () => phase === 'paused' ? togglePause() : start());
+  play.addEventListener('click', () => {
+    if (phase === 'paused') togglePause();
+    else if (mode === 'tournament' && !tournament.active) startTournament();
+    else start();
+  });
   resultReplay.addEventListener('click', () => tournament.active ? showTournamentScreen() : start());
   resultRoster.addEventListener('click', () => tournament.active ? exitTournament() : openRematchRoster());
   bracketNext.addEventListener('click', advanceTournament);
@@ -1392,10 +1522,7 @@
   else window.addEventListener('resize', syncRosterWindow);
   $('local').addEventListener('click', () => setCPU(false));
   $('solo').addEventListener('click', () => setCPU(true));
-  $('tournament').addEventListener('click', () => {
-    if (touchDevice) showModeNotice();
-    else startTournament();
-  });
+  $('tournament').addEventListener('click', () => setMode('tournament'));
   $('sound').addEventListener('click', () => {
     sound = !sound;
     $('sound').setAttribute('aria-pressed', String(sound));
@@ -1429,7 +1556,8 @@
     const selecting = phase === 'menu' || phase === 'end';
     if (key === 'KeyQ' || (selecting && key === 'KeyT')) {
       e.preventDefault();
-      if (!e.repeat) key === 'KeyQ' ? $('sound').click() : setCPU(!cpu);
+      if (!e.repeat) key === 'KeyQ' ? $('sound').click()
+        : setMode(mode === 'local' ? 'cpu' : mode === 'cpu' ? 'tournament' : touchDevice ? 'cpu' : 'local');
       return;
     }
     if ((key === 'Enter' || key === 'NumpadEnter') && (selecting || phase === 'paused') && !e.target?.closest?.('button')) {
@@ -1557,7 +1685,7 @@
   }
 
   buildTouchControls();
-  for (const id of ['local', 'tournament']) $(id).title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
+  $('local').title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
 
   drawBackground();
   resetPositions();
