@@ -157,3 +157,30 @@ html:has(.stage:is(:fullscreen,.is-expanded)){overflow:hidden;overscroll-behavio
 @keyframes final-burst{0%{opacity:.65;transform:scale(.62) rotate(-6deg)}32%{opacity:.36}100%{opacity:0;transform:scale(1.2) rotate(0)}}
 @keyframes final-score-in{from{opacity:0;transform:translateY(10px);visibility:hidden}to{opacity:1;transform:translateY(0);visibility:visible}}
 @media(prefers-reduced-motion:reduce){.result-title,.result-content,.result-burst{animation:none}.result-burst{display:none}}
+
+/* Mobile controls: one analog stick and five large, separated action buttons. */
+.touch{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;margin-top:8px;padding:6px 4px;touch-action:none;user-select:none;-webkit-user-select:none}
+.touch-stick{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto}
+.touch-stick-base{position:relative;width:104px;height:104px;border:2px solid #4b625c;border-radius:50%;background:radial-gradient(circle at 40% 35%,#31433d,#111a18 72%);box-shadow:inset 0 0 0 6px #0c1312,0 4px 10px #0007;touch-action:none}
+.touch-stick-knob{position:absolute;left:50%;top:50%;width:48px;height:48px;border:2px solid #b8d98b;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e6ff9e,#86a842 60%,#4e6826);box-shadow:0 3px 8px #0008,inset 0 2px 4px #fff6;transform:translate(-50%,-50%);will-change:transform}
+.touch-stick span{color:#9fb3ab;font:800 9px var(--mono);letter-spacing:.08em;white-space:nowrap}
+.touch-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;flex:1 1 auto;max-width:300px}
+.touch-actions button{grid-column:span 2;display:grid;place-items:center;min-width:0;min-height:58px;padding:4px 2px;border:2px solid #46645d;border-radius:14px;background:linear-gradient(#263a35,#15211f);color:#eaf6ee;font:800 10px/1.1 var(--mono);letter-spacing:.04em;touch-action:none;box-shadow:0 3px 0 #0a1110,0 5px 10px #0005}
+.touch-actions button:nth-child(4){grid-column:2/4}
+.touch-actions button:nth-child(5){grid-column:4/6}
+.touch-actions button:active{transform:translateY(2px);border-color:#d9fc66;color:#d9fc66;box-shadow:0 1px 0 #0a1110,0 2px 6px #0005}
+.touch-actions button[data-action=special]{border-color:#8da54a;color:#d9fc66}
+.touch-actions button[data-action=slap]{border-color:#b86a50;color:#ffb28f}
+.mode-notice{margin:7px 0 0;padding:7px 9px;border:1px solid #8b7434;border-radius:7px;background:#2a2412;color:#ffe27a;font:800 10px/1.3 var(--mono);letter-spacing:.04em;text-align:center}
+@media(pointer:coarse),(any-pointer:coarse){
+  .controls,.keyboard-guide{display:none}
+  .touch:not([hidden]){display:flex}
+  .stage:is(:fullscreen,.is-expanded) .touch{justify-content:space-between;flex-wrap:nowrap;gap:8px;padding:4px 8px}
+}
+@media(max-width:380px){
+  .touch{gap:6px;padding-inline:2px}
+  .touch-stick-base{width:88px;height:88px}
+  .touch-stick-knob{width:42px;height:42px}
+  .touch-actions{gap:6px}
+  .touch-actions button{min-height:50px;border-radius:12px;font-size:9px}
+}

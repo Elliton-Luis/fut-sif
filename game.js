@@ -82,6 +82,9 @@
     bindings.slice(0, 5).map((code, action) => [code, [side, action]])));
   const controls = new Set([...keys.flat(), ...slapKeys.keys(), 'KeyP']);
   const held = new Set(), pressed = new Set(), pointers = new Map();
+  const touchDevice = window.matchMedia?.('(pointer: coarse), (any-pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const touchStick = { x: 0, y: 0, jump: false, pointer: null };
+  let touchKnob = null, modeNoticeTimer = 0;
   const sc = [$('blue-score'), $('orange-score')];
   const yellowCards = [$('blue-yellow'), $('orange-yellow')];
   const specials = [$('blue-special'), $('orange-special')];
@@ -94,7 +97,7 @@
   const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0, slapCooldown: 0, warned: false }));
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
-  let cpu = false, sound = true, freeze = 0, shake = 0;
+  let cpu = false, mode = 'local', sound = true, freeze = 0, shake = 0;
   let sparks = [], trail = [], trailTick = 0;
   let aim = null;
   let callTime = 0, crowdEnergy = 0, sceneTime = 0, netCooldown = 0;
@@ -166,9 +169,15 @@
     menuPanel.dataset.card = card;
     play.firstChild.textContent = `${button} `;
     overlay.hidden = false;
+    syncTouchVisibility();
   }
 
-  function clearInput() { held.clear(); pressed.clear(); pointers.clear(); }
+  function clearInput() {
+    held.clear();
+    pressed.clear();
+    pointers.clear();
+    resetTouchStick();
+  }
 
   function start() {
     stopPreview();
@@ -199,6 +208,7 @@
     announcement.textContent = 'VAI!';
     announcement.style.color = '';
     updateHUD();
+    syncTouchVisibility();
   }
 
   function togglePause(foul = null) {
@@ -222,6 +232,7 @@
           'CONTINUAR', 'CARTÃO AMARELO', false, 'yellow');
       } else menu('PAUSA', 'Aperte P ou Enter para continuar.', 'CONTINUAR', '●  PARTIDA PAUSADA', false);
     }
+    syncTouchVisibility();
   }
 
   function finish(expelled = null) {
@@ -250,6 +261,7 @@
     resultScreen.hidden = false;
     audio?.play('finish');
     audio?.setInPlay(false);
+    syncTouchVisibility();
   }
 
   function randomVictoryLine(winner, loser) {
@@ -310,7 +322,17 @@
   function human(i) {
     const [left, right, up, down, groundKick, lob, reverse, special] = keys[i];
     const isHeld = key => held.has(key) || Array.from(pointers.values()).includes(key);
-    return [Number(isHeld(right)) - Number(isHeld(left)), pressed.has(up), isHeld(down),
+    const stick = i === 0 ? touchStick : null;
+    const keyDir = Number(isHeld(right)) - Number(isHeld(left));
+    const dir = stick && Math.abs(stick.x) > .16 ? stick.x : keyDir;
+    let jump = pressed.has(up);
+    if (stick) {
+      const wantJump = stick.y < -.55;
+      if (wantJump && !stick.jump) jump = true;
+      stick.jump = wantJump;
+    }
+    const crouch = isHeld(down) || Boolean(stick && stick.y > .55);
+    return [dir, jump, crouch,
       pressed.has(reverse) ? 3 : pressed.has(lob) ? 2 : Number(pressed.has(groundKick)), pressed.has(special)];
   }
 
@@ -1033,16 +1055,41 @@
     updatePicker();
   }
 
+  function showModeNotice() {
+    const notice = $('mode-notice');
+    notice.textContent = 'Esse modo não tem suporte mobile.';
+    notice.hidden = false;
+    clearTimeout(modeNoticeTimer);
+    modeNoticeTimer = setTimeout(() => { notice.hidden = true; }, 3200);
+  }
+
+  function syncTouchVisibility() {
+    const playing = ['kickoff', 'playing', 'goal'].includes(phase);
+    $('touch').hidden = !touchDevice || mode === 'local' || !playing;
+  }
+
+  function resetTouchStick() {
+    touchStick.x = touchStick.y = 0;
+    touchStick.jump = false;
+    touchStick.pointer = null;
+    if (touchKnob) touchKnob.style.transform = 'translate(-50%, -50%)';
+  }
+
   function setCPU(value) {
+    if (touchDevice && !value) {
+      showModeNotice();
+      return;
+    }
     cpu = value;
+    mode = value ? 'cpu' : 'local';
     for (const [id, selected] of [['local', !cpu], ['solo', cpu]]) {
       $(id).classList.toggle('selected', selected);
       $(id).setAttribute('aria-pressed', String(selected));
     }
     updateOrangeLabel();
     $('orange-controls').classList.toggle('cpu', cpu);
-    $('touch').lastElementChild.hidden = cpu;
     updatePicker();
+    syncTouchVisibility();
   }
 
   let changingFullscreen = false;
@@ -1147,35 +1194,104 @@
     if (!changingFullscreen && ['playing', 'kickoff', 'goal'].includes(phase)) togglePause();
   });
 
-  const touch = $('touch');
-  keys.forEach((bindings, i) => {
-    const group = document.createElement('div');
-    group.className = `touch-group ${i ? 'orange' : 'blue'}`;
-    const labels = [['◀', 'Esquerda'], ['▶', 'Direita'], ['↑', 'Pular'], ['↓', 'Abaixar'], ['⚽', 'Chute rasteiro'], ['↗', 'Chute alto'], ['↶', 'Recuo no ar'], ['✦', 'Bicudo']];
-    labels.forEach(([label, action], index) => {
-      const button = document.createElement('button'), key = bindings[index];
-      button.type = 'button'; button.textContent = label;
-      button.setAttribute('aria-label', `Jogador ${i + 1}: ${action}`);
+  function buildTouchControls() {
+    const touch = $('touch');
+    const stick = document.createElement('div');
+    stick.className = 'touch-stick';
+    const base = document.createElement('div');
+    base.className = 'touch-stick-base';
+    base.setAttribute('role', 'slider');
+    base.setAttribute('aria-label', 'Analógico: mover, pular para cima e abaixar para baixo');
+    base.setAttribute('aria-valuemin', '-1');
+    base.setAttribute('aria-valuemax', '1');
+    base.setAttribute('aria-valuenow', '0');
+    const knob = document.createElement('div');
+    knob.className = 'touch-stick-knob';
+    base.append(knob);
+    touchKnob = knob;
+    const stickLabel = document.createElement('span');
+    stickLabel.textContent = 'MOVER / PULAR';
+    stick.append(base, stickLabel);
+
+    const actions = document.createElement('div');
+    actions.className = 'touch-actions';
+    const bindings = [
+      ['ground', 'CHUTE', 'KeyC', 'Chute rasteiro'],
+      ['high', 'ALTO', 'KeyV', 'Chute alto'],
+      ['reverse', 'RECUO', 'KeyB', 'Recuo no ar'],
+      ['special', 'BICUDO', 'KeyN', 'Bicudo'],
+      ['slap', 'TAPA', null, 'Tapa'],
+    ];
+    for (const [action, label, key, description] of bindings) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = action;
+      button.textContent = label;
+      button.setAttribute('aria-label', description);
       button.addEventListener('pointerdown', e => {
         if (phase !== 'playing') return;
         e.preventDefault();
-        button.setPointerCapture(e.pointerId);
+        try { button.setPointerCapture(e.pointerId); } catch {}
+        if (action === 'slap') {
+          slap(players[0]);
+          return;
+        }
         pointers.set(e.pointerId, key);
         pressed.add(key);
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
         button.addEventListener(type, e => pointers.delete(e.pointerId));
       }
-      group.append(button);
+      actions.append(button);
+    }
+
+    touch.replaceChildren(stick, actions);
+    touch.addEventListener('contextmenu', e => e.preventDefault());
+
+    const moveStick = e => {
+      const rect = base.getBoundingClientRect();
+      const radius = rect.width * .34;
+      let dx = e.clientX - (rect.left + rect.width / 2);
+      let dy = e.clientY - (rect.top + rect.height / 2);
+      const distance = Math.hypot(dx, dy);
+      if (distance > radius) {
+        dx *= radius / distance;
+        dy *= radius / distance;
+      }
+      touchStick.x = clamp(dx / radius, -1, 1);
+      touchStick.y = clamp(dy / radius, -1, 1);
+      base.setAttribute('aria-valuenow', touchStick.x.toFixed(2));
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    };
+    base.addEventListener('pointerdown', e => {
+      if (phase !== 'playing') return;
+      e.preventDefault();
+      touchStick.pointer = e.pointerId;
+      try { base.setPointerCapture(e.pointerId); } catch {}
+      moveStick(e);
     });
-    touch.append(group);
-  });
-  touch.hidden = false;
+    base.addEventListener('pointermove', e => {
+      if (e.pointerId !== touchStick.pointer) return;
+      e.preventDefault();
+      moveStick(e);
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      base.addEventListener(type, e => {
+        if (e.pointerId !== touchStick.pointer) return;
+        resetTouchStick();
+        base.setAttribute('aria-valuenow', '0');
+      });
+    }
+  }
+
+  buildTouchControls();
+  $('local').title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
 
   drawBackground();
   resetPositions();
   applyLineup();
   updatePicker();
+  if (touchDevice) setCPU(true);
   let prev = 0, accumulator = 0;
   const step = 1000 / 120;
   function frame(now) {
