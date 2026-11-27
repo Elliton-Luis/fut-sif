@@ -73,8 +73,8 @@
   let firstColumn = 0;
   let lineup = [...selection];
   const keys = [
-    ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyC', 'KeyV', 'KeyB', 'KeyN'],
-    ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Digit1', 'Digit2', 'Digit3', 'Digit4'],
+    ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyC', 'KeyV', 'KeyN', 'KeyB'],
+    ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Digit1', 'Digit2', 'Digit4', 'Digit3'],
   ];
   const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4', Numpad5: 'Digit5' };
   const slapKeys = new Map([['KeyM', 0], ['Digit5', 1]]);
@@ -1792,10 +1792,10 @@
     const actions = document.createElement('div');
     actions.className = 'touch-actions';
     const bindings = [
-      ['ground', 'CHUTE', 'KeyC', 'Chute rasteiro'],
-      ['high', 'ALTO', 'KeyV', 'Chute alto'],
-      ['reverse', 'RECUO', 'KeyB', 'Recuo no ar'],
-      ['special', 'BICUDO', 'KeyN', 'Bicudo'],
+      ['ground', 'RETO', 'KeyC', 'Chute reto'],
+      ['high', 'PRA CIMA', 'KeyV', 'Chute para cima'],
+      ['special', 'BICUDO', 'KeyB', 'Bicudo'],
+      ['reverse', 'PRA TRÁS', 'KeyN', 'Toque para trás no ar'],
       ['slap', 'TAPA', null, 'Tapa'],
     ];
     for (const [action, label, key, description] of bindings) {
