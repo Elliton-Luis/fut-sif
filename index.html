@@ -141,6 +141,7 @@
             <div class="modes" id="modes" aria-label="Modo de jogo">
               <button id="local" class="selected" aria-pressed="true" type="button">2 JOGADORES</button>
               <button id="solo" aria-pressed="false" type="button">VS. CPU</button>
+              <button id="tournament" aria-pressed="false" type="button">MATA MATA</button>
             </div>
             <p id="mode-notice" class="mode-notice" role="status" aria-live="polite" hidden></p>
             <button class="play" id="play" type="button">JOGAR AGORA <span aria-hidden="true">▶</span></button>
@@ -160,6 +161,18 @@
             <div class="result-actions">
               <button class="play" id="result-replay" type="button">REVANCHE <kbd>Enter</kbd></button>
               <button class="utility" id="result-roster" type="button">TROCAR CRAQUES <kbd>R</kbd></button>
+            </div>
+          </div>
+        </section>
+        <section class="bracket-screen" id="bracket-screen" aria-labelledby="bracket-title" hidden>
+          <div class="bracket-panel">
+            <p class="bracket-kicker" id="bracket-kicker">● &nbsp; MATA MATA</p>
+            <h2 class="bracket-title" id="bracket-title">CHAVE DO TORNEIO</h2>
+            <p class="bracket-status" id="bracket-status" role="status"></p>
+            <div class="bracket-rounds" id="bracket-rounds"></div>
+            <div class="bracket-actions">
+              <button class="play" id="bracket-next" type="button">PRÓXIMA PARTIDA <kbd>Enter</kbd></button>
+              <button class="utility" id="bracket-exit" type="button">SAIR DO TORNEIO <kbd>R</kbd></button>
             </div>
           </div>
         </section>

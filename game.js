@@ -78,6 +78,23 @@
   ];
   const aliases = { Numpad1: 'Digit1', Numpad2: 'Digit2', Numpad3: 'Digit3', Numpad4: 'Digit4', Numpad5: 'Digit5' };
   const slapKeys = new Map([['KeyM', 0], ['Digit5', 1]]);
+  const playStyles = {
+    paulo: { speed: 1.03, offset: 12, reach: 6, jump: 4, low: 1, high: 2, special: true },
+    natalino: { speed: .97, offset: -14, reach: 16, jump: 12, low: 2, high: 1, special: true },
+    betael: { speed: 1.08, offset: 22, reach: 0, jump: 8, low: 1, high: 2, special: false },
+    txuco: { speed: .93, offset: -20, reach: 10, jump: 18, low: 2, high: 1, special: true },
+    elliton: { speed: 1, offset: 0, reach: 20, jump: 0, low: 1, high: 2, special: true },
+    ivo: { speed: .9, offset: -8, reach: 24, jump: 6, low: 2, high: 1, special: false },
+    negricius: { speed: 1.05, offset: 28, reach: 4, jump: 10, low: 1, high: 2, special: true },
+    tony: { speed: .98, offset: -24, reach: 14, jump: 2, low: 2, high: 1, special: true },
+    kayna: { speed: 1.1, offset: 16, reach: 2, jump: 16, low: 1, high: 2, special: false },
+    'nego-ju': { speed: .95, offset: -4, reach: 22, jump: 4, low: 2, high: 1, special: true },
+    neri: { speed: 1.02, offset: 10, reach: 8, jump: 20, low: 1, high: 2, special: true },
+    'ali-baba': { speed: .92, offset: -18, reach: 18, jump: 8, low: 2, high: 1, special: false },
+    brazil: { speed: 1.06, offset: 26, reach: 0, jump: 12, low: 1, high: 2, special: true },
+    lembrancinha: { speed: .88, offset: -28, reach: 26, jump: 2, low: 2, high: 1, special: false },
+    romario: { speed: 1.09, offset: 18, reach: 12, jump: 14, low: 1, high: 2, special: true },
+  };
   const selectionKeys = new Map(keys.flatMap((bindings, side) =>
     bindings.slice(0, 5).map((code, action) => [code, [side, action]])));
   const controls = new Set([...keys.flat(), ...slapKeys.keys(), 'KeyP']);
@@ -91,6 +108,7 @@
   const combos = ['blue', 'orange'].map(team => ({ root: $(`${team}-combo`), bar: $(`${team}-combo-bar`), label: $(`${team}-combo-value`) }));
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const resultScreen = $('result-screen'), resultReplay = $('result-replay'), resultRoster = $('result-roster');
+  const bracketScreen = $('bracket-screen'), bracketNext = $('bracket-next'), bracketExit = $('bracket-exit');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
   const keeperAlerts = [$('blue-keeper'), $('orange-keeper')];
@@ -98,6 +116,7 @@
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, mode = 'local', sound = true, freeze = 0, shake = 0;
+  const tournament = { active: false, user: 0, round: 0, bracket: [], champion: null, eliminated: false, previousSelection: null };
   let sparks = [], trail = [], trailTick = 0;
   let aim = null;
   let callTime = 0, crowdEnergy = 0, sceneTime = 0, netCooldown = 0;
@@ -156,6 +175,199 @@
     });
   }
 
+  function shuffle(items) {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function tournamentRoundLabel(index, total) {
+    if (index === total - 1) return 'FINAL';
+    return total === 2 || index === total - 2 ? 'SEMIFINAL' : 'QUARTAS';
+  }
+
+  function simulateMatch(a, b, level = 1) {
+    const score = [Math.floor(Math.random() * 3), Math.floor(Math.random() * 3)];
+    if (score[0] === score[1]) {
+      const pens = [3 + Math.floor(Math.random() * (3 + level)), 3 + Math.floor(Math.random() * (3 + level))];
+      const winner = pens[0] === pens[1] ? (Math.random() < .5 ? a : b) : (pens[0] > pens[1] ? a : b);
+      return { winner, score, pens };
+    }
+    return { winner: score[0] > score[1] ? a : b, score, pens: null };
+  }
+
+  function makeRound(pairs, user) {
+    return pairs.map(([a, b]) => ({ a, b, user: a === user || b === user, winner: null, score: null, pens: null, done: false }));
+  }
+
+  function buildTournamentBracket(user) {
+    const pool = shuffle(cards.map((_, index) => index).filter(index => index !== user));
+    const size = pool.length >= 7 ? 8 : 4;
+    const participants = shuffle([user, ...pool.slice(0, size - 1)]);
+    const bracket = [];
+    let roundSize = participants.length;
+    let remaining = participants;
+    while (roundSize > 1) {
+      const pairs = [];
+      for (let i = 0; i < roundSize; i += 2) pairs.push([remaining[i], remaining[i + 1]]);
+      bracket.push(makeRound(pairs, user));
+      remaining = new Array(roundSize / 2).fill(null);
+      roundSize /= 2;
+    }
+    return bracket;
+  }
+
+  function currentTournamentMatch() {
+    return tournament.bracket[tournament.round]?.find(match => match.user) ?? null;
+  }
+
+  function simulateNPCRound(index) {
+    for (const match of tournament.bracket[index] ?? []) {
+      if (match.user) continue;
+      Object.assign(match, simulateMatch(match.a, match.b, index + 1));
+      match.done = true;
+    }
+  }
+
+  function startTournament() {
+    tournament.active = true;
+    tournament.previousSelection = [...selection];
+    tournament.user = lineup[0];
+    tournament.round = 0;
+    tournament.bracket = buildTournamentBracket(tournament.user);
+    tournament.champion = null;
+    tournament.eliminated = false;
+    simulateNPCRound(0);
+    cpu = true;
+    mode = 'tournament';
+    syncModeButtons();
+    updateOrangeLabel();
+    $('orange-controls').classList.add('cpu');
+    updatePicker();
+    showTournamentScreen();
+  }
+
+  function advanceTournament() {
+    if (!tournament.active) return;
+    if (tournament.eliminated || tournament.champion) {
+      startTournament();
+      return;
+    }
+    const current = currentTournamentMatch();
+    if (current && !current.done) {
+      bracketScreen.hidden = true;
+      start();
+      return;
+    }
+    const winners = tournament.bracket[tournament.round].map(match => match.winner);
+    tournament.round += 1;
+    const round = tournament.bracket[tournament.round];
+    round.length = 0;
+    const pairs = winners.reduce((grouped, winner, index) => {
+      if (index % 2 === 0) grouped.push([winner]);
+      else grouped[grouped.length - 1].push(winner);
+      return grouped;
+    }, []);
+    round.push(...makeRound(pairs, tournament.user));
+    simulateNPCRound(tournament.round);
+    bracketScreen.hidden = true;
+    start();
+  }
+
+  function exitTournament() {
+    tournament.active = false;
+    if (tournament.previousSelection) {
+      selection.splice(0, 2, ...tournament.previousSelection);
+      tournament.previousSelection = null;
+    }
+    tournament.bracket = [];
+    tournament.champion = null;
+    tournament.eliminated = false;
+    bracketScreen.hidden = true;
+    cpu = true;
+    mode = 'cpu';
+    syncModeButtons();
+    updateOrangeLabel();
+    $('orange-controls').classList.add('cpu');
+    applyLineup();
+    updatePicker();
+    menu('ESCOLHA SEU CRAQUE', 'Mude a escalação para a revanche.', 'JOGAR AGORA', '●  MODO ARCADE', true);
+  }
+
+  function syncModeButtons() {
+    for (const [id, selected] of [['local', mode === 'local'], ['solo', mode === 'cpu'], ['tournament', mode === 'tournament']]) {
+      $(id).classList.toggle('selected', selected);
+      $(id).setAttribute('aria-pressed', String(selected));
+    }
+  }
+
+  function syncResultButtons() {
+    resultReplay.firstChild.textContent = tournament.active ? 'VER CHAVE ' : 'REVANCHE ';
+    resultRoster.firstChild.textContent = tournament.active ? 'SAIR DO TORNEIO ' : 'TROCAR CRAQUES ';
+  }
+
+  function showTournamentScreen() {
+    phase = 'tournament';
+    pause.disabled = true;
+    period.textContent = 'MATA MATA';
+    announcement.textContent = '';
+    clearCall();
+    clearCelebration();
+    clearInput();
+    overlay.hidden = true;
+    resultScreen.hidden = true;
+    bracketScreen.hidden = false;
+    syncResultButtons();
+    renderBracket();
+    const status = tournament.champion
+      ? `${playerName(tournament.champion)} é o campeão do mata-mata!`
+      : tournament.eliminated
+        ? `${playerName(tournament.user)} caiu na ${tournamentRoundLabel(tournament.round, tournament.bracket.length).toLowerCase()}.`
+        : `Rodada atual: ${tournamentRoundLabel(tournament.round, tournament.bracket.length)}.`;
+    $('bracket-status').textContent = status;
+    const pending = currentTournamentMatch();
+    bracketNext.firstChild.textContent = tournament.eliminated || tournament.champion ? 'NOVO TORNEIO '
+      : pending && !pending.done ? 'JOGAR PARTIDA ' : 'PRÓXIMA PARTIDA ';
+    syncTouchVisibility();
+  }
+
+  function renderBracket() {
+    const container = $('bracket-rounds');
+    container.replaceChildren();
+    tournament.bracket.forEach((round, roundIndex) => {
+      const column = document.createElement('div');
+      column.className = 'bracket-round';
+      const heading = document.createElement('h3');
+      heading.textContent = tournamentRoundLabel(roundIndex, tournament.bracket.length);
+      column.append(heading);
+      for (const match of round) {
+        const card = document.createElement('div');
+        card.className = `bracket-match${match.user ? ' is-user' : ''}${match.done ? ' is-done' : ''}`;
+        for (const [side, index] of [[0, match.a], [1, match.b]]) {
+          const row = document.createElement('div');
+          row.className = `bracket-player${match.done && index !== null && match.winner === index ? ' is-winner' : ''}`;
+          const name = document.createElement('span');
+          name.textContent = index === null ? 'A DEFINIR' : names[index];
+          const score = document.createElement('b');
+          score.textContent = match.done ? String(match.score[side]) : '–';
+          row.append(name, score);
+          card.append(row);
+        }
+        if (match.pens) {
+          const pens = document.createElement('small');
+          pens.className = 'bracket-pens';
+          pens.textContent = `PÊNALTIS ${match.pens[0]}×${match.pens[1]}`;
+          card.append(pens);
+        }
+        column.append(card);
+      }
+      container.append(column);
+    });
+  }
+
   function menu(title, description, button, kicker, modes, card = '') {
     $('menu-title').textContent = title;
     $('menu-description').textContent = description;
@@ -169,6 +381,8 @@
     menuPanel.dataset.card = card;
     play.firstChild.textContent = `${button} `;
     overlay.hidden = false;
+    bracketScreen.hidden = true;
+    syncResultButtons();
     syncTouchVisibility();
   }
 
@@ -182,7 +396,23 @@
   function start() {
     stopPreview();
     resultScreen.hidden = true;
+    bracketScreen.hidden = true;
+    if (tournament.active) {
+      const match = currentTournamentMatch();
+      if (match) {
+        lineup[1] = match.a === tournament.user ? match.b : match.a;
+        selection[1] = lineup[1];
+      }
+    }
     applyLineup();
+    const style = playStyles[cards[lineup[1]].id.replace('pick-', '')] ?? null;
+    players.forEach(p => { p.aiStyle = null; p.aiLevel = 1; p.speedScale = 1; p.jumpScale = 1; });
+    if (cpu && mode === 'tournament' && style) {
+      players[1].aiStyle = style;
+      players[1].aiLevel = tournament.round + 1;
+      players[1].speedScale = style.speed;
+      players[1].jumpScale = 1 + style.jump / 120;
+    }
     pitch.classList.remove('is-selecting');
     audio?.unlock();
     audio?.setInPlay(true);
@@ -247,20 +477,42 @@
     announcement.textContent = '';
     const winner = expelled ? 1 - expelled.i : score[0] === score[1] ? null : Number(score[1] > score[0]);
     const loser = winner === null ? null : 1 - winner;
+    let matchWinner = winner;
+    let penaltyWinner = false;
+    if (tournament.active) {
+      const match = currentTournamentMatch();
+      if (match) {
+        if (winner === null) {
+          const pens = [3 + Math.floor(Math.random() * 4), 3 + Math.floor(Math.random() * 4)];
+          match.pens = pens;
+          matchWinner = pens[0] === pens[1] ? (Math.random() < .5 ? 0 : 1) : Number(pens[1] > pens[0]);
+          penaltyWinner = true;
+        }
+        const opponent = match.a === tournament.user ? match.b : match.a;
+        match.winner = matchWinner === 0 ? tournament.user : opponent;
+        match.score = [...score];
+        match.done = true;
+        tournament.eliminated = matchWinner !== 0;
+        if (!tournament.eliminated && tournament.round === tournament.bracket.length - 1) tournament.champion = tournament.user;
+      }
+    }
     for (const [side, team] of ['blue', 'orange'].entries()) {
       $(`result-${team}-name`).textContent = names[lineup[side]];
       $(`result-${team}-score`).textContent = score[side];
     }
-    $('result-status').textContent = winner === null ? 'EMPATE!' : `${playerName(winner)} VENCEU!`;
+    $('result-status').textContent = matchWinner === null ? 'EMPATE!'
+      : penaltyWinner ? `${playerName(matchWinner)} VENCEU NOS PÊNALTIS!`
+        : `${playerName(matchWinner)} VENCEU!`;
     $('result-quote').textContent = expelled ? `${playerName(loser)} ganhou um cartão vermelho e passagem só de ida pro vestiário.`
-      : winner === null ? 'Tanto amansa-boi e ninguém conseguiu amansar ninguém.'
-        : randomVictoryLine(winner, loser);
-    resultScreen.dataset.winner = winner === null ? 'draw' : winner === 0 ? 'blue' : 'orange';
+      : matchWinner === null ? 'Tanto amansa-boi e ninguém conseguiu amansar ninguém.'
+        : randomVictoryLine(matchWinner, 1 - matchWinner);
+    resultScreen.dataset.winner = matchWinner === null ? 'draw' : matchWinner === 0 ? 'blue' : 'orange';
     resultScreen.dataset.card = expelled ? 'red' : '';
     overlay.hidden = true;
     resultScreen.hidden = false;
     audio?.play('finish');
     audio?.setInPlay(false);
+    syncResultButtons();
     syncTouchVisibility();
   }
 
@@ -338,11 +590,21 @@
 
   function ai(p) {
     if (aim?.owner === p) return [0, false, false, 0, aim.elapsed > 20 && aim.green];
-    const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * 8 + 44 : 125), 430, 880);
-    const dx = target - p.x, near = ball.x < p.x + 16 && ball.x > p.x - 98;
-    const jump = near && ball.y < p.y - 78 && ball.y > p.y - 172 && ball.vy > -3;
-    const kick = near && Math.abs(ball.y - (p.y - 27)) < 52 ? (ball.y < p.y - 34 ? 2 : 1) : 0;
-    return [Math.abs(dx) < 9 ? 0 : Math.sign(dx), jump, false, kick, ball.x > 570 && ball.x < 770 && canAim(p)];
+    if (!p.aiStyle) {
+      const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * 8 + 44 : 125), 430, 880);
+      const dx = target - p.x, near = ball.x < p.x + 16 && ball.x > p.x - 98;
+      const jump = near && ball.y < p.y - 78 && ball.y > p.y - 172 && ball.vy > -3;
+      const kick = near && Math.abs(ball.y - (p.y - 27)) < 52 ? (ball.y < p.y - 34 ? 2 : 1) : 0;
+      return [Math.abs(dx) < 9 ? 0 : Math.sign(dx), jump, false, kick, ball.x > 570 && ball.x < 770 && canAim(p)];
+    }
+    const style = p.aiStyle;
+    const level = p.aiLevel ?? 1;
+    const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * (8 + level) + 44 : 125) + style.offset, 430, 880);
+    const dx = target - p.x, reach = 16 + style.reach, near = ball.x < p.x + reach && ball.x > p.x - reach - 82;
+    const jump = near && ball.y < p.y - 78 - style.jump && ball.y > p.y - 172 && ball.vy > -3;
+    const kick = near && Math.abs(ball.y - (p.y - 27)) < 52 ? (ball.y < p.y - 34 ? style.high : style.low) : 0;
+    const special = style.special && ball.x > 570 - level * 12 && ball.x < 770 + level * 12 && canAim(p);
+    return [Math.abs(dx) < Math.max(4, 9 - level) ? 0 : Math.sign(dx), jump, false, kick, special];
   }
 
   function stepPlayer(p, [dir, jump, crouch, kick], dt) {
@@ -352,7 +614,7 @@
     p.cooldown = Math.max(0, p.cooldown - dt);
     p.kick = Math.max(0, p.kick - dt);
     if (jump && p.y >= floor && !shouldCrouch) {
-      p.vy = -12.9;
+      p.vy = -12.9 * (p.jumpScale ?? 1);
       audio?.play('jump');
     }
     if (kick && !p.cooldown && (kick !== 3 || p.y < floor || p.vy < 0)) {
@@ -361,7 +623,7 @@
       p.cooldown = 21;
       p.struck = false;
     }
-    const target = dir * (shouldCrouch ? 2.9 : 7.5);
+    const target = dir * (shouldCrouch ? 2.9 : 7.5) * (p.speedScale ?? 1);
     p.vx += (target - p.vx) * (1 - Math.pow(.72, dt));
     p.vy += .61 * dt;
     p.x = clamp(p.x + (p.vx + p.knockback) * dt, goalLeft + 21, goalRight - 21);
@@ -1076,16 +1338,13 @@
   }
 
   function setCPU(value) {
-    if (touchDevice && !value) {
+    if (tournament.active || (touchDevice && !value)) {
       showModeNotice();
       return;
     }
     cpu = value;
     mode = value ? 'cpu' : 'local';
-    for (const [id, selected] of [['local', !cpu], ['solo', cpu]]) {
-      $(id).classList.toggle('selected', selected);
-      $(id).setAttribute('aria-pressed', String(selected));
-    }
+    syncModeButtons();
     updateOrangeLabel();
     $('orange-controls').classList.toggle('cpu', cpu);
     updatePicker();
@@ -1122,8 +1381,10 @@
   }
 
   play.addEventListener('click', () => phase === 'paused' ? togglePause() : start());
-  resultReplay.addEventListener('click', start);
-  resultRoster.addEventListener('click', openRematchRoster);
+  resultReplay.addEventListener('click', () => tournament.active ? showTournamentScreen() : start());
+  resultRoster.addEventListener('click', () => tournament.active ? exitTournament() : openRematchRoster());
+  bracketNext.addEventListener('click', advanceTournament);
+  bracketExit.addEventListener('click', exitTournament);
   pause.addEventListener('click', () => togglePause());
   fullscreen.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', syncFullscreen);
@@ -1131,6 +1392,10 @@
   else window.addEventListener('resize', syncRosterWindow);
   $('local').addEventListener('click', () => setCPU(false));
   $('solo').addEventListener('click', () => setCPU(true));
+  $('tournament').addEventListener('click', () => {
+    if (touchDevice) showModeNotice();
+    else startTournament();
+  });
   $('sound').addEventListener('click', () => {
     sound = !sound;
     $('sound').setAttribute('aria-pressed', String(sound));
@@ -1150,7 +1415,14 @@
     if (phase === 'end' && !resultScreen.hidden && key !== 'KeyQ') {
       if (key === 'KeyR' || ((key === 'Enter' || key === 'NumpadEnter') && !e.target?.closest?.('button'))) {
         e.preventDefault();
-        if (!e.repeat) key === 'KeyR' ? openRematchRoster() : start();
+        if (!e.repeat) key === 'KeyR' ? resultRoster.click() : resultReplay.click();
+      }
+      return;
+    }
+    if (phase === 'tournament' && !bracketScreen.hidden && key !== 'KeyQ') {
+      if (key === 'KeyR' || ((key === 'Enter' || key === 'NumpadEnter') && !e.target?.closest?.('button'))) {
+        e.preventDefault();
+        if (!e.repeat) key === 'KeyR' ? bracketExit.click() : bracketNext.click();
       }
       return;
     }
@@ -1285,7 +1557,7 @@
   }
 
   buildTouchControls();
-  $('local').title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
+  for (const id of ['local', 'tournament']) $(id).title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
 
   drawBackground();
   resetPositions();
