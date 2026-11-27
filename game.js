@@ -29,6 +29,7 @@
   const maxBallSpeed = 56, recharge = 600, aimLimit = 108;
   const comboHits = 4, comboSpeed = 87;
   const keeperZone = 135, keeperTime = 15 * 60;
+  const slapCooldown = 4 * 60;
   const basicBallSpeed = .85, alignedHitBoost = 1.05;
   const ballTimeScale = .5;
   const aimGreenMin = -.29, aimGreenMax = -.04;
@@ -55,7 +56,7 @@
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
-  const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0, warned: false }));
+  const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0, slapCooldown: 0, warned: false }));
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, sound = true, freeze = 0, shake = 0;
@@ -140,7 +141,7 @@
     audio?.unlock();
     audio?.setInPlay(true);
     resetPositions(true);
-    players.forEach(p => { p.recharge = 0; p.combo = 0; p.slapCount = 0; p.warned = false; });
+    players.forEach(p => { p.recharge = 0; p.combo = 0; p.slapCount = 0; p.slapCooldown = 0; p.warned = false; });
     yellowCards.forEach(card => { card.hidden = true; });
     clearInput();
     sparks = [];
@@ -291,6 +292,8 @@
   }
 
   function slap(p) {
+    if (p.slapCooldown > 0) return;
+    p.slapCooldown = slapCooldown;
     const rival = players[1 - p.i];
     const dx = rival.x - p.x;
     p.slapDir = Math.sign(dx) || (p.i ? -1 : 1);
@@ -575,6 +578,7 @@
     const actions = [human(0), cpu ? ai(players[1]) : human(1)];
     players.forEach(p => {
       p.slapTime = Math.max(0, p.slapTime - dt);
+      p.slapCooldown = Math.max(0, p.slapCooldown - dt);
       if (p.recharge > 0 && p.recharge <= dt && (p.i === 0 || !cpu)) audio?.play('ready');
       p.recharge = Math.max(0, p.recharge - dt);
     });
