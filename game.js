@@ -781,12 +781,8 @@
     const stick = i === 0 ? touchStick : null;
     const keyDir = Number(isHeld(right)) - Number(isHeld(left));
     const dir = stick && Math.abs(stick.x) > .16 ? stick.x : keyDir;
-    let jump = pressed.has(up);
-    if (stick) {
-      const wantJump = stick.y < -.55;
-      if (wantJump && !stick.jump) jump = true;
-      stick.jump = wantJump;
-    }
+    const jump = pressed.has(up) || Boolean(stick && stick.y < -.42);
+    if (stick) stick.jump = stick.y < -.42;
     const crouch = isHeld(down) || Boolean(stick && stick.y > .55);
     return [dir, jump, crouch,
       pressed.has(reverse) ? 3 : pressed.has(lob) ? 2 : Number(pressed.has(groundKick)), pressed.has(special)];
