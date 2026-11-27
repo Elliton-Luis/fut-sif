@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Romário — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".2" y1=".12" x2=".82" y2=".95"><stop stop-color="#f4c8a4"/><stop offset=".5" stop-color="#d99b77"/><stop offset="1" stop-color="#a96555"/></linearGradient>
+    <linearGradient id="hair" x1=".24" y1="0" x2=".76" y2="1"><stop stop-color="#624735"/><stop offset=".5" stop-color="#35251e"/><stop offset="1" stop-color="#171314"/></linearGradient>
+    <linearGradient id="beard" x1=".25" y1=".12" x2=".8" y2=".94"><stop stop-color="#4b372d"/><stop offset=".5" stop-color="#271c19"/><stop offset="1" stop-color="#0f0d0e"/></linearGradient>
+    <linearGradient id="shirt" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#292c32"/><stop offset=".45" stop-color="#15171b"/><stop offset="1" stop-color="#08090b"/></linearGradient>
+  </defs>
+  <path fill="url(#shirt)" stroke="#050607" stroke-width="2.6" d="M4 128c5-15 20-22 39-24 7 8 15 12 21 12s14-4 21-12c19 2 34 9 39 24z"/>
+  <path fill="none" stroke="#3d424b" stroke-width="1.4" stroke-linecap="round" d="M41 106c8 7 15 10 23 10s15-3 23-10"/>
+  <path fill="#b97760" d="M49 98c2 11 1 19-5 27h40c-6-8-7-16-5-27-9 7-21 7-30 0z"/>
+  <path fill="url(#skin)" stroke="#2a211f" stroke-width="3.2" stroke-linejoin="round" d="M30 43c2-16 15-27 33-28 19-1 34 9 38 27 3 13 3 29 0 42-3 14-13 25-27 28-14 3-26-4-33-16-7-11-10-25-11-38 0-5 0-10 0-15z"/>
+  <path fill="#d99b77" stroke="#2a211f" stroke-width="3" stroke-linejoin="round" d="M32 57c-8-4-14 1-13 10 1 8 5 15 12 16l5-7z"/>
+  <path fill="#d99b77" stroke="#2a211f" stroke-width="3" stroke-linejoin="round" d="M96 57c8-4 14 1 13 10-1 8-5 15-12 16l-5-7z"/>
+  <path fill="none" stroke="#9c5f51" stroke-width="1.6" stroke-linecap="round" d="M24 63c-3 3-2 9 3 12m77-12c3 3 2 9-3 12"/>
+  <path fill="url(#hair)" stroke="#241b18" stroke-width="2.4" stroke-linejoin="round" d="M33 47c-1-13 7-25 20-30 9-4 20-4 29 0 12 5 18 15 19 27 1 5 0 9-1 12-2-8-5-14-9-18-7-7-17-10-27-9-9 1-17 6-22 14-3 5-5 10-5 16-2-3-3-7-4-12z"/>
+  <path fill="#3b2a22" opacity=".72" d="M33 47c-1 7 0 15 2 22l4-2c-2-6-3-13-2-20zm62 0c1 7 0 15-2 22l-4-2c2-6 3-13 2-20z"/>
+  <g fill="none" stroke-linecap="round">
+    <path stroke="#7a5841" stroke-width="1.35" d="M42 30c6-7 15-11 24-11m-18 5c7-5 16-7 25-6m-8-4c9-1 17 3 23 9m3 5c5 3 8 8 9 14"/>
+    <path stroke="#231a18" stroke-width="1.05" opacity=".8" d="M35 43c0 6 1 11 3 16m55-17c0 6-1 12-3 17m-53-19c1 5 2 9 4 13m51-13c-1 5-2 9-4 13"/>
+  </g>
+  <path fill="#f3c5a1" opacity=".55" d="M42 38c7-6 17-8 27-6l7 5c-12-3-23-2-34 4zm-5 29c6-3 12-2 17 1-3 5-9 7-14 5z"/>
+  <path fill="#b97561" opacity=".45" d="M91 85c6-5 9-12 11-19 1 16-5 30-16 37-9 6-19 7-27 4 15 0 25-8 32-22z"/>
+  <path fill="#e0a381" opacity=".42" d="M39 73c6-3 12-2 16 2-3 4-10 5-14 2zm43 1c6-3 12-2 16 1-3 5-10 6-15 3z"/>
+  <g fill="none" stroke="#9e604f" stroke-width="1.3" stroke-linecap="round" opacity=".7">
+    <path d="M38 47c4-2 8-2 12 0m28 0c4-2 8-1 12 1"/>
+    <path d="M43 77c2-2 5-3 8-2m26 0c3-1 6 0 8 2"/>
+  </g>
+  <path fill="#2b1d1a" d="M33 52c6-6 16-7 25-3l-1 5c-7-3-15-3-22 0zm63-1c-6-5-15-6-23-2l1 5c6-3 14-3 21 0z"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#f7e7d6" stroke="#6c4034" stroke-width="1.6" d="M36 63c5-6 16-6 21 1-5 5-15 6-21-1z"/>
+    <path fill="#f7e7d6" stroke="#6c4034" stroke-width="1.6" d="M71 64c5-6 16-6 21 0-5 6-16 6-21 0z"/>
+    <path fill="#6c452c" d="M43 62c2-2 6-1 7 2 1 3-3 6-6 5-4-1-4-5-1-7zm37 2c2-2 6-1 7 2 1 3-3 6-6 5-4-1-4-5-1-7z"/>
+    <path fill="#181010" d="M45 63c1-1 3-1 3 1 0 2-3 3-4 1-1-1 0-2 1-2zm37 2c1-1 3-1 3 1 0 2-3 3-4 1-1-1 0-2 1-2z"/>
+    <path fill="#fff8ee" d="M46 62h1.3v1.3H46zm37 2h1.2v1.2H83z"/>
+    <path fill="none" stroke="#54362c" stroke-width="1.5" d="M36 64c5 2 11 2 16 0m26 0c5 2 10 2 15 0"/>
+  </g>
+  <path fill="#dc9d79" d="M63 53c-2 9-5 17-9 23-3 4 0 9 6 10 6 1 12-2 14-7 1-4-3-9-5-15-1-4-2-8-2-12z"/>
+  <path fill="none" stroke="#b97760" stroke-width="1.4" stroke-linecap="round" d="M63 57c-1 7-3 13-6 18"/>
+  <path fill="#8b4f42" d="M55 82c2-1 5-1 6 1-2 2-5 2-6-1zm18 1c2-2 5-1 6 1-2 2-5 2-6-1z"/>
+  <path fill="url(#beard)" stroke="#1b1514" stroke-width="2.2" stroke-linejoin="round" d="M27 50c-2 10-1 23 4 35 5 13 15 23 27 26 13 3 26-2 35-12 8-9 11-21 10-34l-2-16c-2 11-6 21-12 28-5 6-11 9-18 10-7 1-15-1-22-6-8-5-13-13-16-22-1-3-2-6-2-9z"/>
+  <path fill="url(#beard)" d="M45 83c5-5 13-5 19-1l1 4c-6-3-13-3-19 0zm37 0c-6-4-14-3-19 1l-1 4c6-3 13-3 19-1z"/>
+  <path fill="none" stroke="#5d4236" stroke-width="1.25" stroke-linecap="round" opacity=".75" d="M31 61c1 9 3 17 7 24m-3-3c2 6 5 11 9 15m-4-4c4 5 9 9 14 11m7 2c7 0 14-3 19-8m3-4c5-6 8-13 10-21m1-6c1-7 1-13 0-19"/>
+  <path fill="none" stroke="#1b1211" stroke-width="1.05" stroke-linecap="round" opacity=".9" d="M36 74c2 6 5 11 9 15m-4 1c4 6 9 10 15 12m3 1c6 2 12 0 17-4m4-4c4-5 7-11 9-18m1-7c1-5 1-10 0-15"/>
+  <path fill="#3a1718" stroke="#5f2d2a" stroke-width="1.5" stroke-linejoin="round" d="M45 89c7-5 31-5 39 1-1 9-9 16-20 16-11 0-18-8-19-17z"/>
+  <path fill="#f7f1e5" d="M49 90c7-3 24-3 31 1l-2 7c-7-3-20-3-27 0z"/>
+  <path fill="none" stroke="#d4c4ae" stroke-width=".8" d="M57 89v6m8-6v6m8-5v6m8-4v5"/>
+  <path fill="#f0e7da" d="M52 100c7-2 17-2 24 0l-3 4c-6-1-13-1-19 0z"/>
+  <path fill="none" stroke="#8f4f45" stroke-width="3" stroke-linecap="round" d="M45 89c7-5 31-5 39 1"/>
+  <path fill="none" stroke="#a45c50" stroke-width="2.4" stroke-linecap="round" d="M47 99c6 6 26 6 35-1"/>
+  <path fill="none" stroke="#9d5b50" stroke-width="1.5" stroke-linecap="round" d="M43 91c-5-2-8-6-10-11m52 11c5-2 8-6 10-11"/>
+  <path fill="#2b1e1a" opacity=".8" d="M55 105c6-2 12-2 18 0-4 5-14 5-18 0z"/>
+  <path fill="#f1bd98" opacity=".45" d="M45 46c6-3 12-3 18-1l-2 4c-5-2-11-2-16 0z"/>
+</svg>
