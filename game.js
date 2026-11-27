@@ -28,7 +28,7 @@
   const goalLeft = 77, goalRight = W - goalLeft, radius = 14, playerScale = .9;
   const maxBallSpeed = 56, recharge = 600, aimLimit = 108;
   const comboHits = 4, comboSpeed = 87;
-  const keeperZone = 135, keeperTime = 15 * 60;
+  const keeperZone = 45, keeperAdvance = 24, keeperWarning = 5 * 60, keeperGrace = 3 * 60;
   const slapCooldown = 4 * 60;
   const basicBallSpeed = .85, alignedHitBoost = 1.05;
   const ballTimeScale = .5;
@@ -56,6 +56,7 @@
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
+  const keeperAlerts = [$('blue-keeper'), $('orange-keeper')];
   const players = colors.map((color, i) => ({ color, i, recharge: 0, combo: 0, slapCount: 0, slapCooldown: 0, warned: false }));
   const ball = {};
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
@@ -89,8 +90,9 @@
       x: i ? 722 : 278, y: floor, vx: 0, vy: 0, kick: 0, kickType: 0,
       cooldown: 0, struck: false, crouch: false, gait: 0,
       slapTime: 0, slapDir: 0, knockback: 0,
-      keeperTicks: 0, keeperCalled: false,
+      keeperTicks: 0, keeperAnchor: null,
     }));
+    keeperAlerts.forEach(alert => { alert.hidden = true; });
     Object.assign(ball, { x: W / 2, y: 174, vx: serve ? (Math.random() - .5) * 3 : 0, vy: 0, angle: 0, spin: 0, boost: 0, comboFlight: false, clearOf: null, clearance: 0 });
     aim = null;
     trail = [];
@@ -322,15 +324,31 @@
     for (const p of players) {
       const ownGoal = p.i ? goalRight : goalLeft;
       const distance = Math.abs(p.x - ownGoal);
-      if (distance > keeperZone) {
+      const alert = keeperAlerts[p.i];
+      // A faixa curta só pune quem cola no gol; passos pequenos não reiniciam a contagem.
+      if (p.keeperAnchor === null && distance > keeperZone) continue;
+      if (p.keeperAnchor !== null && distance - p.keeperAnchor >= keeperAdvance) {
         p.keeperTicks = 0;
-        if (distance > keeperZone + 20) p.keeperCalled = false;
-      } else if (!p.keeperCalled) {
-        p.keeperTicks += dt;
-        if (p.keeperTicks >= keeperTime && !callTime) {
-          p.keeperCalled = true;
-          playCall(`${names[lineup[p.i]]} acha que ele é goleiro`, p.color, 130);
-        }
+        p.keeperAnchor = distance <= keeperZone ? distance : null;
+        alert.hidden = true;
+        continue;
+      }
+
+      p.keeperAnchor = Math.min(p.keeperAnchor ?? distance, distance);
+      p.keeperTicks += dt;
+      const remaining = keeperWarning + keeperGrace - p.keeperTicks;
+      if (remaining <= 0) {
+        if (aim?.owner === p) aim = null;
+        p.vx = 0;
+        p.knockback = p.i ? -24 : 24;
+        p.keeperTicks = 0;
+        p.keeperAnchor = null;
+        alert.hidden = true;
+        playCall(`${names[lineup[p.i]]} foi afastado do gol`, p.color);
+      } else if (p.keeperTicks >= keeperWarning) {
+        const text = `${names[lineup[p.i]]} acha que ele é goleiro · avance! ${Math.ceil(remaining / 60)} s`;
+        if (alert.textContent !== text) alert.textContent = text;
+        alert.hidden = false;
       }
     }
   }
