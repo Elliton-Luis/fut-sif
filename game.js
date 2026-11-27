@@ -1233,10 +1233,9 @@
     }
   }
 
-  const background = document.createElement('canvas');
-  background.width = W;
-  background.height = H;
-  const bg = background.getContext('2d');
+  const bgImage = new Image();
+  let bgReady = false;
+  bgImage.onload = () => { bgReady = true; };
 
   function oval(g, x, y, rx, ry, color) {
     g.fillStyle = color;
@@ -1253,66 +1252,79 @@
     g.stroke();
   }
 
-  function drawBackground() {
-    const sky = bg.createLinearGradient(0, 0, 0, floor);
+  function drawBackground(g) {
+    const sky = g.createLinearGradient(0, 0, 0, floor);
     sky.addColorStop(0, '#182824');
     sky.addColorStop(1, '#46754e');
-    bg.fillStyle = sky;
-    bg.fillRect(0, 0, W, H);
+    g.fillStyle = sky;
+    g.fillRect(0, 0, W, H);
     let seed = 279;
     const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
     for (let x = 0; x < W; x += 28) {
       const h = 40 + rand() * 101;
-      bg.fillStyle = '#243a33';
-      bg.fillRect(x, 215 - h, 25 + rand() * 13, h);
+      g.fillStyle = '#243a33';
+      g.fillRect(x, 215 - h, 25 + rand() * 13, h);
       for (let y = 222 - h; y < 202; y += 13) for (let k = 5; k < 23; k += 8) {
-        if (rand() < .33) { bg.fillStyle = '#66877b66'; bg.fillRect(x + k, y, 3, 4); }
+        if (rand() < .33) { g.fillStyle = '#66877b66'; g.fillRect(x + k, y, 3, 4); }
       }
     }
     for (const x of [108, 892]) {
-      const glow = bg.createRadialGradient(x, 88, 4, x, 88, 105);
+      const glow = g.createRadialGradient(x, 88, 4, x, 88, 105);
       glow.addColorStop(0, '#e8ffd763');
       glow.addColorStop(1, '#e8ffd700');
-      oval(bg, x, 88, 105, 105, glow);
-      line(bg, [[x, 217], [x, 92]], '#57746a', 5);
-      bg.fillStyle = '#152522'; bg.fillRect(x - 31, 72, 62, 25);
-      for (let j = -24; j < 29; j += 12) for (const y of [78, 88]) oval(bg, x + j, y, 3, 2.5, '#e5ffe9');
+      oval(g, x, 88, 105, 105, glow);
+      line(g, [[x, 217], [x, 92]], '#57746a', 5);
+      g.fillStyle = '#152522'; g.fillRect(x - 31, 72, 62, 25);
+      for (let j = -24; j < 29; j += 12) for (const y of [78, 88]) oval(g, x + j, y, 3, 2.5, '#e5ffe9');
     }
-    bg.fillStyle = '#142722'; bg.fillRect(0, 195, W, 79);
+    g.fillStyle = '#142722'; g.fillRect(0, 195, W, 79);
     const seats = ['#34574a', '#496c52', '#293f38', '#678464', '#8c835a'];
     for (let y = 202; y < 257; y += 9) for (let x = 0; x < W; x += 8) {
-      if (rand() < .78) oval(bg, x + rand() * 4, y + rand() * 4, 2 + rand() * 2, 2.3, seats[Math.floor(rand() * seats.length)]);
+      if (rand() < .78) oval(g, x + rand() * 4, y + rand() * 4, 2 + rand() * 2, 2.3, seats[Math.floor(rand() * seats.length)]);
     }
-    bg.fillStyle = '#20372b'; bg.fillRect(0, 258, W, 27);
-    line(bg, [[0, 260], [W, 260]], '#72947b75', 2);
-    bg.font = 'bold 11px monospace'; bg.textAlign = 'center'; bg.fillStyle = '#8eb39b';
-    for (const x of [180, 500, 820]) bg.fillText('✦  QUINTAL ARCADE  ✦', x, 276);
-    bg.fillStyle = '#397149'; bg.fillRect(0, 284, W, H - 284);
+    g.fillStyle = '#20372b'; g.fillRect(0, 258, W, 27);
+    line(g, [[0, 260], [W, 260]], '#72947b75', 2);
+    g.font = 'bold 11px monospace'; g.textAlign = 'center'; g.fillStyle = '#8eb39b';
+    for (const x of [180, 500, 820]) g.fillText('✦  QUINTAL ARCADE  ✦', x, 276);
+    g.fillStyle = '#397149'; g.fillRect(0, 284, W, H - 284);
     for (let i = 0; i < 12; i++) {
       const top = (i - 6) * 81 + W / 2, bottom = (i - 6) * 104 + W / 2;
-      bg.fillStyle = i % 2 ? '#407c4d' : '#367047';
-      bg.beginPath(); bg.moveTo(top, 284); bg.lineTo(top + 81, 284); bg.lineTo(bottom + 104, H); bg.lineTo(bottom, H); bg.fill();
+      g.fillStyle = i % 2 ? '#407c4d' : '#367047';
+      g.beginPath(); g.moveTo(top, 284); g.lineTo(top + 81, 284); g.lineTo(bottom + 104, H); g.lineTo(bottom, H); g.fill();
     }
     for (let i = 0; i < 650; i++) {
-      bg.fillStyle = rand() > .5 ? '#d0f0aa25' : '#15392639';
-      bg.fillRect(rand() * W, 285 + rand() * (H - 285), 1 + rand() * 4, 1);
+      g.fillStyle = rand() > .5 ? '#d0f0aa25' : '#15392639';
+      g.fillRect(rand() * W, 285 + rand() * (H - 285), 1 + rand() * 4, 1);
     }
     const paint = '#e4f2d7bb';
-    line(bg, [[19, floor], [981, floor]], paint, 2);
-    line(bg, [[W / 2, 285], [W / 2, H]], paint, 2);
-    bg.strokeStyle = paint; bg.lineWidth = 2;
-    bg.beginPath(); bg.ellipse(W / 2, floor, 80, 28, 0, 0, Math.PI * 2); bg.stroke();
+    line(g, [[19, floor], [981, floor]], paint, 2);
+    line(g, [[W / 2, 285], [W / 2, H]], paint, 2);
+    g.strokeStyle = paint; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(W / 2, floor, 80, 28, 0, 0, Math.PI * 2); g.stroke();
     for (const dir of [1, -1]) {
-      bg.save(); bg.translate(dir === 1 ? 0 : W, 0); bg.scale(dir, 1);
-      line(bg, [[0, 320], [142, 320], [178, 388], [0, 388]], paint, 2);
-      bg.fillStyle = '#152d2870'; bg.fillRect(18, crossbar + 5, goalLeft - 18, floor - crossbar - 5);
-      for (let y = crossbar + 11; y < floor; y += 10) line(bg, [[18, y], [goalLeft, y]], '#cae9db59');
-      for (let x = 20; x < goalLeft; x += 9) line(bg, [[x, crossbar], [x, floor]], '#cae9db59');
-      bg.lineJoin = 'round';
-      line(bg, [[17, floor], [17, crossbar], [goalLeft, crossbar]], '#142e26', 10);
-      line(bg, [[17, floor], [17, crossbar], [goalLeft, crossbar]], '#e6f5e1', 5);
-      bg.restore();
+      g.save(); g.translate(dir === 1 ? 0 : W, 0); g.scale(dir, 1);
+      line(g, [[0, 320], [142, 320], [178, 388], [0, 388]], paint, 2);
+      g.fillStyle = '#152d2870'; g.fillRect(18, crossbar + 5, goalLeft - 18, floor - crossbar - 5);
+      for (let y = crossbar + 11; y < floor; y += 10) line(g, [[18, y], [goalLeft, y]], '#cae9db59');
+      for (let x = 20; x < goalLeft; x += 9) line(g, [[x, crossbar], [x, floor]], '#cae9db59');
+      g.lineJoin = 'round';
+      line(g, [[17, floor], [17, crossbar], [goalLeft, crossbar]], '#142e26', 10);
+      line(g, [[17, floor], [17, crossbar], [goalLeft, crossbar]], '#e6f5e1', 5);
+      g.restore();
     }
+  }
+
+  function initBackground() {
+    try {
+      const off = document.createElement('canvas');
+      off.width = W;
+      off.height = H;
+      const g = off.getContext('2d');
+      if (g) {
+        drawBackground(g);
+        bgImage.src = off.toDataURL('image/png');
+      }
+    } catch { /* fallback draws directly on ctx */ }
   }
 
   function drawPlayer(p) {
@@ -1436,9 +1448,9 @@
   function render() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
-    ctx.filter = 'none';
     ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(background, 0, 0);
+    if (bgReady && bgImage.naturalWidth) ctx.drawImage(bgImage, 0, 0, W, H);
+    else drawBackground(ctx);
     if (sceneTime && !reducedMotion?.matches) {
       ctx.save();
       for (let i = 0; i < 42; i++) {
@@ -1829,7 +1841,7 @@
   buildTouchControls();
   $('local').title = touchDevice ? 'Esse modo não tem suporte mobile' : '';
 
-  drawBackground();
+  initBackground();
   resetPositions();
   applyLineup();
   updatePicker();
