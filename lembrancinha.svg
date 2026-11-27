@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Lembrancinha — retrato arcade</title>
+  <defs>
+    <linearGradient id="skin" x1=".88" y1=".19" x2=".14" y2=".84"><stop stop-color="#e5a583"/><stop offset=".53" stop-color="#c7896d"/><stop offset="1" stop-color="#8e5249"/></linearGradient>
+    <linearGradient id="hair" x1=".85" y1=".08" x2=".14" y2=".89"><stop stop-color="#725044"/><stop offset=".52" stop-color="#533833"/><stop offset="1" stop-color="#272229"/></linearGradient>
+    <linearGradient id="sweep" x1=".86" y1=".17" x2=".14" y2=".9"><stop stop-color="#c08d79"/><stop offset="1" stop-color="#765044"/></linearGradient>
+  </defs>
+  <g stroke="#2d242a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#a56a58" d="M28 62c-7-6-14-2-14 6 0 9 6 19 14 19l7-8z"/>
+    <path fill="url(#skin)" d="M30 39c10-13 25-19 44-16 18 3 29 14 31 32 2 9 0 17-2 23l5 9c1 4-3 7-8 8l-2 7c-4 11-13 20-23 21-10 1-18-3-25-9-12-8-21-20-25-34-4-15-2-31 5-41z"/>
+    <path fill="url(#hair)" d="M26 76c-4-5-5-12-6-17-3-6-4-12-2-18-3-9 3-18 10-23 4-6 11-9 19-10 7-5 17-7 25-4l8 1 7 5c9 0 17 6 20 11l7 4 4 7c2 7-1 16-6 20-3 5-9 9-15 9-4 0-9-3-11-6-7 5-15 5-21 0-6 3-13 1-18-3-7 7-11 15-14 23z"/>
+  </g>
+  <path fill="url(#sweep)" d="M39 25c5-8 14-12 24-12-5 4-7 6-9 10 14-2 26-7 35-7-3 6-9 10-17 14 14-1 22-4 31-7-3 9-12 15-23 19 10-1 19-4 29-9-4 12-14 18-26 19 2-3 3-5 2-8-9 5-20 7-32 3 5-2 8-5 10-8-10 2-20 1-27-2 6-3 10-7 13-11z" opacity=".72"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#856057" stroke-width="1.85" d="M26 34c4-10 12-16 21-18m-12 29c6 0 12-2 17-7m16 13c7 0 13-2 18-5m5 8c7-1 13-5 17-10"/>
+    <path stroke="#d9a28e" stroke-width="1.55" opacity=".86" d="M49 24c6-6 15-7 22-9m-15 17c9-2 18-7 25-11m-13 18c10-1 21-5 27-9m-3 15c6-2 11-5 15-9"/>
+    <path stroke="#905747" stroke-width="1.65" d="M19 68c3-2 6 0 7 4l-2 3"/>
+  </g>
+  <path fill="#f4ad87" opacity=".52" d="M42 82c7 0 14 4 17 9-7 3-13 0-17-9zm43 17 10-4-4 7z"/>
+  <path fill="#a1645b" opacity=".5" d="M55 112c8 4 19 6 28 3-4 5-11 6-17 4-4-1-8-3-11-7z"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#382829" d="M43 64c8-4 16-3 23 1l3 4-2 2c-8-3-15-4-23-3zm40 3c6-3 12-2 18 1l1 3-2 2c-5-3-10-4-17-3z"/>
+    <path fill="#ecd4bf" stroke="#754a40" stroke-width="1.55" d="M47 74c6-4 14-3 20 2-5 4-14 4-20-2zm37 3c5-4 11-4 16 0-5 4-11 4-16 0z"/>
+    <path fill="#37292b" d="M55 73c3-1 7 0 8 3 1 3-3 5-6 4-4-1-5-5-2-7zm34 2c3-1 6 0 7 2 1 3-3 4-5 4-3-1-5-4-2-6z"/>
+    <path fill="#fff0dc" d="M59 74h1.4v1.4H59zm34 2h1.3v1.3H93z"/>
+    <path fill="#db9675" d="M76 73c2 5 4 10 8 13 3 3 6 4 5 7-1 3-6 4-10 3-5-1-7-3-6-7z"/>
+    <path fill="none" stroke="#945b50" stroke-width="1.6" d="M76 93q3-2 6 0m3 1 3-2"/>
+    <path fill="#a35e5c" d="M68 103c4-3 8-4 11-3l5 2 5-1 5 2c-5 5-11 8-16 7-5-1-8-4-10-7z"/>
+    <path fill="#d78b7c" d="M74 106c5 1 12 0 16-2-4 4-10 6-16 2z"/>
+    <path fill="none" stroke="#773f40" stroke-width="1.45" d="M68 103c4 0 8 2 13 2 4 0 9-3 13-2"/>
+  </g>
+</svg>
