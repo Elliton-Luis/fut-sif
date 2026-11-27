@@ -109,6 +109,7 @@
   const overlay = $('overlay'), play = $('play'), pause = $('pause');
   const resultScreen = $('result-screen'), resultReplay = $('result-replay'), resultRoster = $('result-roster');
   const bracketScreen = $('bracket-screen'), bracketNext = $('bracket-next'), bracketExit = $('bracket-exit');
+  const highlightBar = $('highlight-bar'), highlightLabel = $('highlight-label'), highlightSkip = $('highlight-skip');
   const announcement = $('announcement'), timer = $('time'), period = $('period');
   const callout = $('play-call');
   const keeperAlerts = [$('blue-keeper'), $('orange-keeper')];
@@ -117,6 +118,7 @@
   let score = [0, 0], clock = 60, phase = 'menu', resumedPhase;
   let cpu = false, mode = 'local', sound = true, freeze = 0, shake = 0;
   const tournament = { active: false, user: 0, round: 0, rounds: [], stats: new Map(), eliminated: false, finished: false, exitRound: -1, view: 'bracket', previousSelection: null };
+  let highlight = null;
   let sparks = [], trail = [], trailTick = 0;
   let aim = null;
   let callTime = 0, crowdEnergy = 0, sceneTime = 0, netCooldown = 0;
@@ -295,19 +297,84 @@
     showTournamentScreen();
   }
 
+  function pickHighlightMatch(roundIndex) {
+    const candidates = (tournament.rounds[roundIndex] ?? [])
+      .filter(m => m.done && !m.wo && !isUserMatch(m) && m.score);
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => (b.score[0] + b.score[1]) - (a.score[0] + a.score[1]));
+    return candidates[0];
+  }
+
+  function startHighlight(match, roundIndex, nextView = 'bracket') {
+    if (!match) {
+      if (nextView === 'podium') showPodium();
+      else showTournamentScreen();
+      return;
+    }
+    highlight = { match, roundIndex, nextView };
+    selection[0] = match.a;
+    selection[1] = match.b;
+    applyLineup();
+    players.forEach(p => { p.aiStyle = null; p.aiLevel = roundIndex + 2; p.speedScale = 1.08; p.jumpScale = 1.05; p.recharge = 0; p.combo = 2; p.slapCount = 0; p.slapCooldown = 0; p.warned = false; });
+    yellowCards.forEach(card => { card.hidden = true; });
+    overlay.hidden = true;
+    resultScreen.hidden = true;
+    bracketScreen.hidden = true;
+    pitch.classList.remove('is-selecting', 'is-bracket');
+    resetPositions(true);
+    ball.vx = (Math.random() < .5 ? -1 : 1) * 9;
+    ball.vy = -5;
+    sparks = [];
+    shake = 0;
+    crowdEnergy = .45;
+    netCooldown = 0;
+    clearCall();
+    clearCelebration();
+    clearInput();
+    setUrgent(false);
+    score = [...match.score];
+    clock = 10;
+    phase = 'highlight';
+    pause.disabled = true;
+    period.textContent = 'MELHORES JOGADAS';
+    announcement.textContent = '';
+    const penText = match.pens ? ` (${match.pens[0]}×${match.pens[1]} PÊN)` : '';
+    highlightLabel.textContent = `★ ${roundLabels[roundIndex]} · ${names[match.a]} ${match.score[0]} × ${match.score[1]} ${names[match.b]}${penText}`;
+    highlightBar.hidden = false;
+    audio?.unlock();
+    audio?.setInPlay(true);
+    updateHUD();
+    syncTouchVisibility();
+  }
+
+  function endHighlight() {
+    if (!highlight) return;
+    const { nextView } = highlight;
+    highlight = null;
+    highlightBar.hidden = true;
+    selection[0] = tournament.user;
+    if (nextView === 'podium') showPodium();
+    else showTournamentScreen();
+  }
+
   function advanceTournament() {
     if (!tournament.active) return;
     if (tournament.view === 'podium') { startTournament(); return; }
     if (tournament.finished) { showPodium(); return; }
     if (tournament.eliminated) {
       while (!tournament.finished) completeRound();
-      showTournamentScreen();
+      const finalMatch = tournament.rounds.at(-1)?.[0];
+      if (finalMatch && !finalMatch.wo && !isUserMatch(finalMatch)) {
+        startHighlight(finalMatch, tournament.rounds.length - 1, 'bracket');
+      } else showTournamentScreen();
       return;
     }
     start();
   }
 
   function exitTournament() {
+    highlight = null;
+    highlightBar.hidden = true;
     tournament.active = false;
     tournament.view = 'bracket';
     if (tournament.previousSelection) selection.splice(0, 2, ...tournament.previousSelection);
@@ -334,6 +401,8 @@
   }
 
   function enterTournamentPhase() {
+    highlight = null;
+    highlightBar.hidden = true;
     phase = 'tournament';
     pause.disabled = true;
     period.textContent = 'MATA-MATA';
@@ -523,6 +592,8 @@
 
   function start() {
     stopPreview();
+    highlight = null;
+    highlightBar.hidden = true;
     resultScreen.hidden = true;
     bracketScreen.hidden = true;
     pitch.classList.remove('is-bracket');
@@ -570,7 +641,7 @@
   }
 
   function togglePause(foul = null) {
-    if (phase === 'menu' || phase === 'end' || phase === 'tournament') return;
+    if (phase === 'menu' || phase === 'end' || phase === 'tournament' || phase === 'highlight' || phase === 'highlight-goal') return;
     clearInput();
     if (phase === 'paused') {
       phase = resumedPhase;
@@ -672,6 +743,19 @@
   }
 
   function goal(i) {
+    if (phase === 'highlight') {
+      phase = 'highlight-goal';
+      freeze = .65;
+      clearCall();
+      announcement.textContent = `GOLAÇO DO ${playerName(i)}!`;
+      announcement.style.color = colors[i];
+      shake = 9;
+      crowdEnergy = 1;
+      burst(ball.x, ball.y, colors[i], 55, 12);
+      confetti(colors[i]);
+      audio?.play('goal');
+      return;
+    }
     score[i]++;
     updateHUD();
     phase = 'goal';
@@ -708,6 +792,13 @@
 
   function ai(p) {
     if (aim?.owner === p) return [0, false, false, 0, aim.elapsed > 20 && aim.green];
+    if (p.i === 0) {
+      const target = clamp(ball.x - (ball.x < 480 ? -ball.vx * ballTimeScale * 8 + 44 : 125), 120, 570);
+      const dx = target - p.x, near = ball.x > p.x - 16 && ball.x < p.x + 98;
+      const jump = near && ball.y < p.y - 78 && ball.y > p.y - 172 && ball.vy > -3;
+      const kick = near && Math.abs(ball.y - (p.y - 27)) < 52 ? (ball.y < p.y - 34 ? 2 : 1) : 0;
+      return [Math.abs(dx) < 8 ? 0 : Math.sign(dx), jump, false, kick, ball.x > 230 && ball.x < 430 && canAim(p)];
+    }
     if (!p.aiStyle) {
       const target = clamp(ball.x + (ball.x > 520 ? ball.vx * ballTimeScale * 8 + 44 : 125), 430, 880);
       const dx = target - p.x, near = ball.x < p.x + 16 && ball.x > p.x - 98;
@@ -1047,17 +1138,19 @@
       s.life -= dt;
     }
     sparks = sparks.filter(s => s.life > 0);
-    if (phase === 'goal' || phase === 'kickoff') {
+    if (phase === 'goal' || phase === 'kickoff' || phase === 'highlight-goal') {
       pressed.clear();
       freeze -= dt / 60;
       if (freeze > 0) return;
-      if (phase === 'goal') { resetPositions(true); clearCelebration(); }
+      const wasHighlight = phase === 'highlight-goal';
+      if (phase === 'goal' || wasHighlight) { resetPositions(true); clearCelebration(); }
       else audio?.play('start');
-      phase = 'playing';
+      phase = wasHighlight ? 'highlight' : 'playing';
       announcement.textContent = '';
       announcement.style.color = '';
     }
-    const actions = [human(0), cpu ? ai(players[1]) : human(1)];
+    const isHighlight = phase === 'highlight';
+    const actions = isHighlight ? [ai(players[0]), ai(players[1])] : [human(0), cpu ? ai(players[1]) : human(1)];
     players.forEach(p => {
       p.slapTime = Math.max(0, p.slapTime - dt);
       p.slapCooldown = Math.max(0, p.slapCooldown - dt);
@@ -1092,7 +1185,7 @@
       ball.boost = Math.max(0, ball.boost - dt);
       const ballStep = dt * ballTimeScale / 2;
       stepBall(ballStep);
-      if (phase === 'playing') stepBall(ballStep);
+      if (phase === 'playing' || phase === 'highlight') stepBall(ballStep);
     }
     if (phase === 'playing') trackKeepers(dt);
     const before = Math.ceil(clock);
@@ -1107,7 +1200,12 @@
       } else if (leftOnClock <= 5) audio?.play('tick');
     }
     updateHUD();
-    if (clock <= 1e-8) { clock = 0; updateHUD(); finish(); }
+    if (clock <= 1e-8) {
+      clock = 0;
+      updateHUD();
+      if (isHighlight) endHighlight();
+      else finish();
+    }
   }
 
   const background = document.createElement('canvas');
@@ -1226,7 +1324,7 @@
       oval(ctx, hand, -53, 7, 5, skin);
     }
     ctx.save(); ctx.translate(0, hy);
-    ctx.filter = inverted ? 'invert(1)' : 'none';
+    if (inverted) ctx.filter = 'invert(1)';
     if (portrait.naturalWidth) {
       ctx.drawImage(portrait, -42, -45, 84, 84);
       ctx.restore(); ctx.restore();
@@ -1311,6 +1409,10 @@
   }
 
   function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.filter = 'none';
+    ctx.clearRect(0, 0, W, H);
     ctx.drawImage(background, 0, 0);
     if (sceneTime && !reducedMotion?.matches) {
       ctx.save();
@@ -1512,8 +1614,15 @@
     else if (mode === 'tournament' && !tournament.active) startTournament();
     else start();
   });
-  resultReplay.addEventListener('click', () => tournament.active ? showTournamentScreen() : start());
+  resultReplay.addEventListener('click', () => {
+    if (!tournament.active) { start(); return; }
+    const lastRound = tournament.finished ? tournament.rounds.length - 1 : Math.max(0, tournament.round - 1);
+    const clip = pickHighlightMatch(lastRound);
+    if (clip) startHighlight(clip, lastRound, 'bracket');
+    else showTournamentScreen();
+  });
   resultRoster.addEventListener('click', () => tournament.active ? exitTournament() : openRematchRoster());
+  highlightSkip.addEventListener('click', endHighlight);
   bracketNext.addEventListener('click', advanceTournament);
   bracketExit.addEventListener('click', exitTournament);
   pause.addEventListener('click', () => togglePause());
@@ -1544,6 +1653,13 @@
       if (key === 'KeyR' || ((key === 'Enter' || key === 'NumpadEnter') && !e.target?.closest?.('button'))) {
         e.preventDefault();
         if (!e.repeat) key === 'KeyR' ? resultRoster.click() : resultReplay.click();
+      }
+      return;
+    }
+    if ((phase === 'highlight' || phase === 'highlight-goal') && key !== 'KeyQ') {
+      if (key === 'Enter' || key === 'NumpadEnter' || key === 'Space' || key === 'Escape') {
+        e.preventDefault();
+        if (!e.repeat) endHighlight();
       }
       return;
     }
